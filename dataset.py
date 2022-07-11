@@ -53,7 +53,7 @@ class Dataset:
             del imgs_ann[k]
 
         # creating dataset json
-        dataset_dicts = []
+        dataset_list = []
         for idx, v in enumerate(imgs_ann.values()):
             record = {}
 
@@ -87,9 +87,9 @@ class Dataset:
                         }
                     objs.append(obj)
                 record["annotations"] = objs
-                dataset_dicts.append(record)
+                dataset_list.append(record)
 
-        self.__dataset = dataset_dicts
+        self.__dataset = dataset_list
         self.__via = imgs_ann
         self.length = len(self.__dataset)
         self.__output_dir = output_directory
@@ -191,4 +191,11 @@ class Dataset:
     # set and get
     def getVIAJSON(self) -> dict:
         return self.__via
+
+    def getDataset(self) -> list:
+        return self.__dataset
+
+    def getPolygonData(self) -> dict:
+        return self.__Polygon_data
+        
         
