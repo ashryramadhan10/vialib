@@ -472,7 +472,7 @@ class Yolov5:
             print_buffer.append("{} {:.3f} {:.3f} {:.3f} {:.3f}".format(class_id, b_center_x, b_center_y, b_width, b_height))
 
         # getting image extention
-        image_ext = info_dict["filename"][-3];
+        image_ext = info_dict["filename"][-3:];
             
         # Name of the file which we have to save 
         save_file_name = os.path.join(yolo_output_dir, info_dict["filename"].replace(image_ext, "txt"))
