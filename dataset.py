@@ -55,60 +55,63 @@ class Dataset:
         # creating dataset json
         dataset_list = []
         for idx, v in enumerate(imgs_ann.values()):
-            record = {}
 
             filename = os.path.join(images_directory, v["filename"])
-            height, width = cv2.imread(filename).shape[:2]
+
+            if cv2.imread(filename) is not None:
+                
+                height, width = cv2.imread(filename).shape[:2]
+                
+                record = {}
+                record["file_name"] = filename
+                record["image_id"] = idx
+                record["height"] = height
+                record["width"] = width
             
-            record["file_name"] = filename
-            record["image_id"] = idx
-            record["height"] = height
-            record["width"] = width
-        
-            annos = v["regions"]
-            objs = []
-            if len(annos) > 0:
-                for anno in annos:
-                    reg = anno["region_attributes"]
-                    anno = anno["shape_attributes"]
-                    px = anno["all_points_x"]
-                    py = anno["all_points_y"]
-                    poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
-                    poly = [p for x in poly for p in x]
-                    region_class = reg["type"]
-                    obj = {
-                        "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
-                        "segmentation": [poly],
-                        "all_points_x": px,
-                        "all_points_y": py,
-                        "class": region_class,
-                        "category_id": 0,
-                        "iscrowd": 0
-                        }
-                    objs.append(obj)
-                record["annotations"] = objs
-                dataset_list.append(record)
+                annos = v["regions"]
+                objs = []
+                if len(annos) > 0:
+                    for anno in annos:
+                        reg = anno["region_attributes"]
+                        anno = anno["shape_attributes"]
+                        px = anno["all_points_x"]
+                        py = anno["all_points_y"]
+                        poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+                        poly = [p for x in poly for p in x]
+                        region_class = reg["type"]
+                        obj = {
+                            "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
+                            "segmentation": [poly],
+                            "all_points_x": px,
+                            "all_points_y": py,
+                            "class": region_class,
+                            "category_id": 0,
+                            "iscrowd": 0
+                            }
+                        objs.append(obj)
+                    record["annotations"] = objs
+                    dataset_list.append(record)
 
-        self.__dataset = dataset_list
-        self.__via = imgs_ann
-        self.length = len(self.__dataset)
-        self.__output_dir = output_directory
+            self.__dataset = dataset_list
+            self.__via = imgs_ann
+            self.length = len(self.__dataset)
+            self.__output_dir = output_directory
 
-        if not os.path.exists(self.__output_dir):
-            os.mkdir(self.__output_dir)
+            if not os.path.exists(self.__output_dir):
+                os.mkdir(self.__output_dir)
 
-        # Polygon
-        self.__Polygon = Vialibpolygon(self.__dataset)
-        self.__Polygon_data, self.class_list = self.__Polygon.get_polygons()
+            # Polygon
+            self.__Polygon = Vialibpolygon(self.__dataset)
+            self.__Polygon_data, self.class_list = self.__Polygon.get_polygons()
 
-        # Visualizer
-        self.__DatasetVisualizer = Visualizer(self.__dataset)
+            # Visualizer
+            self.__DatasetVisualizer = Visualizer(self.__dataset)
 
-        # Converter
-        self.__Converter = Converter(self.__dataset, self.class_list, self.__Polygon_data)
+            # Converter
+            self.__Converter = Converter(self.__dataset, self.class_list, self.__Polygon_data)
 
-        # Augmenter
-        self.__Augmenter = Augmenter(self.__dataset, self.__via, self.__Polygon_data)
+            # Augmenter
+            self.__Augmenter = Augmenter(self.__dataset, self.__via, self.__Polygon_data)
 
     def printDataset(self):
         """Print dataset correspond to this object
