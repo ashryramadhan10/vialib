@@ -205,7 +205,7 @@ class DatasetBbox:
 
     # Basic members
     __dataset = None
-    __via_json = None
+    __via = None
     length = 0
     __output_dir = None
     
