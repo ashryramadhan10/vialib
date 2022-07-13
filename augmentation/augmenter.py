@@ -120,8 +120,9 @@ class Augmenter:
             
             
             if numeric_file_name:
+                via_filename = self.__via[k]['filename']
                 via_size = self.__via[k]['size']
-                aug_via_json_key = str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1] + str(via_size)
+                aug_via_json_key = str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
                 aug_via_json[aug_via_json_key]['filename'] = str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
             else:
