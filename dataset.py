@@ -178,8 +178,8 @@ class Dataset:
     def augment(self, aug):
         self.__Augmenter.augment(aug, self.__output_dir)
 
-    def transform(self, seq):
-        self.__Augmenter.transform(seq, self.__output_dir)
+    def transform(self, seq, numeric_file_name=False):
+        self.__Augmenter.transform(seq, self.__output_dir, numeric_file_name)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}
