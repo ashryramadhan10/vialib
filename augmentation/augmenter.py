@@ -88,7 +88,7 @@ class Augmenter:
         with open(output_dir + "via_region_data.json", "w") as output_file:
             json.dump(out_anns, output_file)
 
-    def transform(self, aug, output_dir):
+    def transform(self, aug, output_dir, numeric_file_name=False):
         psoi_aug_list = []
         aug_via_json = {}
 
@@ -107,7 +107,11 @@ class Augmenter:
                 if not os.path.exists(output_dir):
                     os.mkdir(output_dir)
 
-                cv2.imwrite(output_dir + file_name, image_aug)
+                if numeric_file_name:
+                    cv2.imwrite(output_dir + dataset_json_idx + "." + file_name.split(".")[1], image_aug)
+                else:
+                    cv2.imwrite(output_dir + file_name, image_aug)
+
 
                 # add psoi aug to list
                 psoi_aug_list.append(psoi_aug)
@@ -115,7 +119,11 @@ class Augmenter:
         for imgs_idx, (k, v) in enumerate(self.__via.items()):
             aug_via_json_key = k
             aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
-            aug_via_json[aug_via_json_key]['filename'] = aug_via_json[aug_via_json_key]['filename']
+            
+            if numeric_file_name:
+                aug_via_json[aug_via_json_key]['filename'] = imgs_idx + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
+            else:
+                aug_via_json[aug_via_json_key]['filename'] = aug_via_json[aug_via_json_key]['filename']
             
             annos = aug_via_json[aug_via_json_key]["regions"]
             if len(annos) > 0:
@@ -127,6 +135,7 @@ class Augmenter:
         with open(output_dir + "via_region_data.json", "w") as output_file:
             json.dump(aug_via_json, output_file)
 
+    # using Albumentations
     def augment_pascalvoc_format(self, aug, input_dir, output_dir): # not yet tested
         
         counter = 1

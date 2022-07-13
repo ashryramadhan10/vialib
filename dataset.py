@@ -200,5 +200,80 @@ class Dataset:
 
     def getPolygonData(self) -> dict:
         return self.__Polygon_data
+
+class DatasetBbox:
+
+    # Basic members
+    __dataset = None
+    __via_json = None
+    length = 0
+    __output_dir = None
+    
+    def __init__(self, images_directory, output_directory, annotation_file_name):
+        
+        json_file = os.path.join(images_directory, annotation_file_name)
+        with open(json_file) as f:
+            imgs_ann = json.load(f)
+
+        # clean img_anns from non-annotated images
+        k_sus = []
+        for k, v in imgs_ann.items():
+            if len(v['regions']) == 0:
+                k_sus.append(k)
+
+        for k in k_sus:
+            del imgs_ann[k]
+
+        # creating dataset json
+        dataset_list = []
+        for idx, v in enumerate(imgs_ann.values()):
+
+            filename = os.path.join(images_directory, v["filename"])
+
+            if cv2.imread(filename) is not None:
+                
+                height, width = cv2.imread(filename).shape[:2]
+                
+                record = {}
+                record["file_name"] = filename
+                record["image_id"] = idx
+                record["height"] = height
+                record["width"] = width
+            
+                annos = v["regions"]
+                objs = []
+
+                # only for annotated regions
+                if len(annos) > 0:
+                    for anno in annos:
+                        reg = anno["region_attributes"]
+                        anno = anno["shape_attributes"]
+                        px = int(anno["x"])
+                        py = int(anno["y"])
+                        pwidth = int(anno["width"])
+                        pheight = int(anno["height"])
+                        px2 = int(px + pwidth)
+                        py2 = int(py + pheight)
+                        region_class = reg["type"]
+                        obj = {
+                            "bbox": [px, py, px2, py2],
+                            "class": region_class,
+                            }
+                        objs.append(obj)
+                    record["annotations"] = objs
+                    dataset_list.append(record)
+            
+            # set all data class members
+            self.__dataset = dataset_list
+            self.__via = imgs_ann
+            self.length = len(self.__dataset)
+            self.__output_dir = output_directory
+
+            # generate output directory
+            if not os.path.exists(self.__output_dir):
+                os.mkdir(self.__output_dir)
+
+
+
         
         
