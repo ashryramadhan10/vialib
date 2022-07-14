@@ -4,12 +4,12 @@ import json
 import numpy as np
 import cv2
 
-from . annotation.shapes import Vialibpolygon
-from . visualisation.visualizer import Visualizer
-from . converter.format import Converter
-from . augmentation.augmenter import Augmenter
+from . annotation.shapes import Vialiboundingbox, Vialibpolygon
+from . visualisation.visualizer import VisualizerPolygons, VisualizerBoundingBoxes
+from . converter.format import ConverterBoundinBox, ConverterPolygons
+from . augmentation.augmenter import AugmenterBoundingBox, AugmenterPolygon
 
-class Dataset:
+class DatasetPolygon:
     """ Dataset Class
 
     author: Ashry Ramadhan
@@ -105,13 +105,13 @@ class Dataset:
             self.__Polygon_data, self.class_list = self.__Polygon.get_polygons()
 
             # Visualizer
-            self.__DatasetVisualizer = Visualizer(self.__dataset)
+            self.__DatasetVisualizer = VisualizerPolygons(self.__dataset)
 
             # Converter
-            self.__Converter = Converter(self.__dataset, self.class_list, self.__Polygon_data)
+            self.__Converter = ConverterPolygons(self.__dataset, self.class_list, self.__Polygon_data)
 
             # Augmenter
-            self.__Augmenter = Augmenter(self.__dataset, self.__via, self.__Polygon_data)
+            self.__Augmenter = AugmenterPolygon(self.__dataset, self.__via, self.__Polygon_data)
 
     def printDataset(self):
         """Print dataset correspond to this object
@@ -178,8 +178,8 @@ class Dataset:
     def augment(self, aug):
         self.__Augmenter.augment(aug, self.__output_dir)
 
-    def transform(self, seq, numeric_file_name=False):
-        self.__Augmenter.transform(seq, self.__output_dir, numeric_file_name)
+    def transform(self, tf, numeric_file_name=False):
+        self.__Augmenter.transform(tf, self.__output_dir, numeric_file_name)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}
@@ -201,13 +201,29 @@ class Dataset:
     def getPolygonData(self) -> dict:
         return self.__Polygon_data
 
-class DatasetBbox:
+class DatasetBoundingBox:
 
     # Basic members
     __dataset = None
     __via = None
     length = 0
     __output_dir = None
+
+    # Object class
+    class_list = []
+
+    # __Polygon
+    __vialibbox = None
+    __vialibbox_data = {}
+
+    # Visualizer
+    __DatasetVisualizer = None
+
+    # Converter
+    __Converter = None
+
+    # Augmenter
+    __Augmenter = None
     
     def __init__(self, images_directory, output_directory, annotation_file_name):
         
@@ -272,6 +288,86 @@ class DatasetBbox:
             # generate output directory
             if not os.path.exists(self.__output_dir):
                 os.mkdir(self.__output_dir)
+
+            # Bounding Box
+            self.__vialibbox = Vialiboundingbox(self.__dataset)
+            self.__vialibbox_data, self.class_list = self.__vialibbox.get_bboxes()
+
+            # Visualizer
+            self.__DatasetVisualizer = VisualizerBoundingBoxes(self.__dataset)
+
+            # Converter
+            self.__Converter = ConverterBoundinBox(self.__dataset, self.class_list)
+
+            # Augmenter
+            self.__Augmenter = AugmenterBoundingBox(self.__dataset, self.__via, self.__vialibbox_data)
+
+    def printDataset(self):
+        """Print dataset correspond to this object
+        Args:
+            None
+        """
+        for i in range(len(self.__dataset)):
+            print(self.__dataset[i])
+
+    def printClasses(self):
+        """Print all classes correspond to this object
+        Args:
+            None
+        """
+        print(self.class_list)
+
+    def plot_dataset(self, cols=2, num_of_sample=4, color_dict=None, randomness=True):
+        """Plot the dataset
+        Args:
+            cols: nb. fo columns in plot
+            num_of_sample: sample that need to be plotted
+            color_dict: color dictionary for each object
+            semantic_segmentation: (for semantic segmentation only) set this to true if you in case semantic segmentation
+            randomness: set True if you want to display your images randomly
+        """
+        self.__DatasetVisualizer.plot_dataset(bboxes_data=self.__vialibbox_data, cols=cols, num_of_sample=num_of_sample, color_dict=color_dict, randomness=randomness)
+
+    ###########################  CONVERTER ############################################
+    def convert_to_yolo_format(self):
+        """Covert VIA json annotation format to YOLO format
+        Args:
+            None
+        """
+        self.__Converter.via2yolo(output_dir=self.__output_dir)
+
+    def convert_to_pascalvoc_format(self): # not yet tested
+        """Covert VIA json annotation format to Pascal VOC format
+        Args:
+            None
+        """
+        self.__Converter.via2pascalvoc(self.__output_dir)
+
+    def augment(self, aug):
+        self.__Augmenter.augment(aug, self.__output_dir)
+
+    def transform(self, tf, numeric_file_name=False):
+        self.__Augmenter.transform(tf, self.__output_dir, numeric_file_name)
+
+    def merge(self, dataset_list) -> None:
+        out_anns = {}
+        out_anns.update(self.__via)
+        
+        for elm in dataset_list:
+            out_anns.update(elm)
+
+        with open(self.__output_dir + "via_region_data.json", "w") as output_file:
+            json.dump(out_anns, output_file)
+
+    # set and get
+    def getVIAJSON(self) -> dict:
+        return self.__via
+
+    def getDataset(self) -> list:
+        return self.__dataset
+
+    def getBoundingBoxes(self) -> dict:
+        return self.__vialibbox_data
 
 
 

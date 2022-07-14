@@ -13,7 +13,7 @@ from imgaug import ia
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
-class Converter:
+class ConverterPolygons:
 
     __dataset = None
     __class_list = None
@@ -39,6 +39,23 @@ class Converter:
     def via2iccv09(self, color_dict, output_dir):
         iccv09format = Iccv09format()
         iccv09format.via2iccv09(self.__dataset, color_dict, self.__polys_dict, output_dir)
+
+    def via2pascalvoc(self, output_dir):
+        pascalvocformat = Pascalvocformat()
+        pascalvocformat.via2pascalvoc(self.__dataset, output_dir)
+
+class ConverterBoundinBox:
+
+    __dataset = None
+    __class_list = None
+
+    def __init__(self, dataset, class_list):
+        self.__dataset = dataset
+        self.__class_list = class_list
+
+    def via2yolo(self, output_dir):
+        yoloformat = Yoloformat()
+        yoloformat.via2yolo(self.__dataset, self.__class_list, output_dir)
 
     def via2pascalvoc(self, output_dir):
         pascalvocformat = Pascalvocformat()
