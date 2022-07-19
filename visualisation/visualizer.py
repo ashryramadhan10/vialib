@@ -18,6 +18,7 @@ class VisualizerPolygons:
     def plot_dataset(self,
         polygon_data,
         cols=2,
+        image_start=0,
         num_of_sample=4,
         color_dict=None,
         semantic_segmentation=False,
@@ -26,7 +27,7 @@ class VisualizerPolygons:
         if randomness:
             samples = random.sample(self.__dataset, num_of_sample)
         else:
-            samples = self.__dataset[:num_of_sample]
+            samples = self.__dataset[image_start:num_of_sample]
 
         images_polys = []
         for sample_idx in range(len(samples)):
@@ -73,6 +74,7 @@ class VisualizerBoundingBoxes:
     def plot_dataset(self,
         bboxes_data,
         cols=2,
+        image_start=0,
         num_of_sample=4,
         color_dict=None,
         randomness=True):
@@ -80,7 +82,7 @@ class VisualizerBoundingBoxes:
         if randomness:
             samples = random.sample(self.__dataset, num_of_sample)
         else:
-            samples = self.__dataset[:num_of_sample]
+            samples = self.__dataset[image_start:num_of_sample]
 
         images_bboxes = []
         for sample_idx in range(len(samples)):

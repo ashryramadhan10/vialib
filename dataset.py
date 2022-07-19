@@ -129,7 +129,7 @@ class DatasetPolygon:
         """
         print(self.class_list)
 
-    def plot_dataset(self, cols=2, num_of_sample=4, color_dict=None, semantic_segmentation=False, randomness=True):
+    def plot_dataset(self, cols=2, image_start=0, num_of_sample=4, color_dict=None, semantic_segmentation=False, randomness=True):
         """Plot the dataset
         Args:
             cols: nb. fo columns in plot
@@ -138,7 +138,7 @@ class DatasetPolygon:
             semantic_segmentation: (for semantic segmentation only) set this to true if you in case semantic segmentation
             randomness: set True if you want to display your images randomly
         """
-        self.__DatasetVisualizer.plot_dataset(polygon_data=self.__Polygon_data, cols=cols, num_of_sample=num_of_sample, color_dict=color_dict, semantic_segmentation=semantic_segmentation, randomness=randomness)
+        self.__DatasetVisualizer.plot_dataset(polygon_data=self.__Polygon_data, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, semantic_segmentation=semantic_segmentation, randomness=randomness)
 
     ###########################  CONVERTER ############################################
     def convert_to_yolo_format(self):
@@ -318,7 +318,7 @@ class DatasetBoundingBox:
         """
         print(self.class_list)
 
-    def plot_dataset(self, cols=2, num_of_sample=4, color_dict=None, randomness=True):
+    def plot_dataset(self, cols=2, image_start=0, num_of_sample=4, color_dict=None, randomness=True):
         """Plot the dataset
         Args:
             cols: nb. fo columns in plot
@@ -327,7 +327,7 @@ class DatasetBoundingBox:
             semantic_segmentation: (for semantic segmentation only) set this to true if you in case semantic segmentation
             randomness: set True if you want to display your images randomly
         """
-        self.__DatasetVisualizer.plot_dataset(bboxes_data=self.__vialibbox_data, cols=cols, num_of_sample=num_of_sample, color_dict=color_dict, randomness=randomness)
+        self.__DatasetVisualizer.plot_dataset(bboxes_data=self.__vialibbox_data, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, randomness=randomness)
 
     ###########################  CONVERTER ############################################
     def convert_to_yolo_format(self):
