@@ -62,9 +62,11 @@ class AugmenterPolygon:
                 # add psoi aug to list
                 psoi_aug_list.append(psoi_aug)
 
-        for imgs_idx, (k, v) in enumerate(self.__via.items()):
-            aug_via_json_key = "aug_" + k
-            aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
+        # more robust to missing images
+        for imgs_idx in range(len(self.__dataset)):
+            key = self.__dataset[imgs_idx]["key"]
+            aug_via_json_key = "aug_" + key
+            aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
             aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']
             
             annos = aug_via_json[aug_via_json_key]["regions"]
@@ -73,6 +75,10 @@ class AugmenterPolygon:
                     anno = anno["shape_attributes"]
                     anno["all_points_x"] = [l.tolist() for l in psoi_aug_list[imgs_idx][anno_idx].exterior[:,0].astype(int)]
                     anno["all_points_y"] = [l.tolist() for l in psoi_aug_list[imgs_idx][anno_idx].exterior[:,1].astype(int)]
+
+        # for imgs_idx, (k, v) in enumerate(self.__via.items()):
+        #     aug_via_json_key = "aug_" + k
+        #     aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
 
         out_anns = {}
         for d in [self.__via, aug_via_json]:
@@ -109,17 +115,19 @@ class AugmenterPolygon:
                 # add psoi aug to list
                 psoi_aug_list.append(psoi_aug)
 
-        for imgs_idx, (k, v) in enumerate(self.__via.items()):
-            
+        # more robust to missing images
+        for imgs_idx in range(len(self.__dataset)):
+            key = self.__dataset[imgs_idx]["key"]
+
             if numeric_file_name:
-                via_filename = self.__via[k]['filename']
-                via_size = self.__via[k]['size']
+                via_filename = self.__via[key]['filename']
+                via_size = self.__via[key]['size']
                 aug_via_json_key = str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
                 aug_via_json[aug_via_json_key]['filename'] = str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
             else:
-                aug_via_json_key = k
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
+                aug_via_json_key = key
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
                 aug_via_json[aug_via_json_key]['filename'] = aug_via_json[aug_via_json_key]['filename']
             
             annos = aug_via_json[aug_via_json_key]["regions"]
@@ -185,9 +193,11 @@ class AugmenterBoundingBox:
                 # add psoi aug to list
                 bboxes_aug_list.append(bbsoi_aug)
 
-        for imgs_idx, (k, v) in enumerate(self.__via.items()):
-            aug_via_json_key = "aug_" + k
-            aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
+        # more robust to missing images
+        for imgs_idx in range(len(self.__dataset)):
+            key = self.__dataset[imgs_idx]["key"]
+            aug_via_json_key = "aug_" + key
+            aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
             aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']
             
             annos = aug_via_json[aug_via_json_key]["regions"]
@@ -234,17 +244,18 @@ class AugmenterBoundingBox:
                 # add psoi aug to list
                 bboxes_aug_list.append(bbsoi_aug)
 
-        for imgs_idx, (k, v) in enumerate(self.__via.items()):
-            
+        for imgs_idx in range(len(self.__dataset)):
+            key = self.__dataset[imgs_idx]["key"]
+
             if numeric_file_name:
-                via_filename = self.__via[k]['filename']
-                via_size = self.__via[k]['size']
+                via_filename = self.__via[key]['filename']
+                via_size = self.__via[key]['size']
                 aug_via_json_key = str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
                 aug_via_json[aug_via_json_key]['filename'] = str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
             else:
-                aug_via_json_key = k
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[k])
+                aug_via_json_key = key
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
                 aug_via_json[aug_via_json_key]['filename'] = aug_via_json[aug_via_json_key]['filename']
             
             annos = aug_via_json[aug_via_json_key]["regions"]

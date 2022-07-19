@@ -64,6 +64,7 @@ class DatasetPolygon:
                 
                 record = {}
                 record["file_name"] = filename
+                record["key"] = v["filename"] + str(v["size"])
                 record["image_id"] = idx
                 record["height"] = height
                 record["width"] = width
