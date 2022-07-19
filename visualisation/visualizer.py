@@ -27,7 +27,7 @@ class VisualizerPolygons:
         if randomness:
             samples = random.sample(self.__dataset, num_of_sample)
         else:
-            samples = self.__dataset[image_start:num_of_sample]
+            samples = self.__dataset[image_start:(image_start + num_of_sample)]
 
         images_polys = []
         for sample_idx in range(len(samples)):
