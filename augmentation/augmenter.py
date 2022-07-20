@@ -87,7 +87,7 @@ class AugmenterPolygon:
         with open(output_dir + "via_region_data.json", "w") as output_file:
             json.dump(out_anns, output_file)
 
-    def transform(self, aug, output_dir, numeric_file_name=False):
+    def transform(self, aug, output_dir, add_name="", numeric_file_name=False):
         psoi_aug_list = []
         aug_via_json = {}
 
@@ -107,10 +107,9 @@ class AugmenterPolygon:
                     os.mkdir(output_dir)
 
                 if numeric_file_name:
-                    cv2.imwrite(output_dir + str(dataset_json_idx) + "." + file_name.split(".")[1], image_aug)
+                    cv2.imwrite(output_dir + add_name + str(dataset_json_idx) + "." + file_name.split(".")[1], image_aug)
                 else:
                     cv2.imwrite(output_dir + file_name, image_aug)
-
 
                 # add psoi aug to list
                 psoi_aug_list.append(psoi_aug)
@@ -122,9 +121,9 @@ class AugmenterPolygon:
             if numeric_file_name:
                 via_filename = self.__via[key]['filename']
                 via_size = self.__via[key]['size']
-                aug_via_json_key = str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
+                aug_via_json_key = add_name + str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                aug_via_json[aug_via_json_key]['filename'] = str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
+                aug_via_json[aug_via_json_key]['filename'] = add_name + str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
             else:
                 aug_via_json_key = key
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
@@ -216,7 +215,7 @@ class AugmenterBoundingBox:
         with open(output_dir + "via_region_data.json", "w") as output_file:
             json.dump(out_anns, output_file)
 
-    def transform(self, aug, output_dir, numeric_file_name=False):
+    def transform(self, aug, output_dir, add_name="", numeric_file_name=False):
         bboxes_aug_list = []
         aug_via_json = {}
 
@@ -236,7 +235,7 @@ class AugmenterBoundingBox:
                     os.mkdir(output_dir)
 
                 if numeric_file_name:
-                    cv2.imwrite(output_dir + str(dataset_json_idx) + "." + file_name.split(".")[1], image_aug)
+                    cv2.imwrite(output_dir + add_name + str(dataset_json_idx) + "." + file_name.split(".")[1], image_aug)
                 else:
                     cv2.imwrite(output_dir + file_name, image_aug)
 
@@ -250,9 +249,9 @@ class AugmenterBoundingBox:
             if numeric_file_name:
                 via_filename = self.__via[key]['filename']
                 via_size = self.__via[key]['size']
-                aug_via_json_key = str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
+                aug_via_json_key = add_name + str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                aug_via_json[aug_via_json_key]['filename'] = str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
+                aug_via_json[aug_via_json_key]['filename'] = add_name + str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
             else:
                 aug_via_json_key = key
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])

@@ -179,8 +179,8 @@ class DatasetPolygon:
     def augment(self, aug):
         self.__Augmenter.augment(aug, self.__output_dir)
 
-    def transform(self, tf, numeric_file_name=False):
-        self.__Augmenter.transform(tf, self.__output_dir, numeric_file_name)
+    def transform(self, tf, add_name="", numeric_file_name=False):
+        self.__Augmenter.transform(tf, self.__output_dir, add_name, numeric_file_name)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}
@@ -347,8 +347,8 @@ class DatasetBoundingBox:
     def augment(self, aug):
         self.__Augmenter.augment(aug, self.__output_dir)
 
-    def transform(self, tf, numeric_file_name=False):
-        self.__Augmenter.transform(tf, self.__output_dir, numeric_file_name)
+    def transform(self, tf, add_name="", numeric_file_name=False):
+        self.__Augmenter.transform(tf, self.__output_dir, add_name, numeric_file_name)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}
