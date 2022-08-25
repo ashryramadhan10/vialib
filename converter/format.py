@@ -148,6 +148,21 @@ class Pascalvocformat:
         out_file = xml_output_dir + "aug_" + image_filename + ".xml"
         tree.write(out_file)
 
+    def create_file(image_file_path, image_file_name, image_width, image_height, bboxes, output_dir):
+        file_path = image_file_path
+        file_name_only = image_file_name.split("/")[1].split(".")[0]
+
+        writer = Writer(file_path, image_width, image_height)
+
+        for i in range(0, len(bboxes)):
+            writer.addObject(bboxes[i][4], 
+                            bboxes[i][0],
+                            bboxes[i][1],
+                            bboxes[i][2],
+                            bboxes[i][3])
+
+        writer.save(output_dir + file_name_only + ".xml")
+
 class Yoloformat:
     
     def __init__(self) -> None:
@@ -376,20 +391,20 @@ class Iccv09format:
                     image_polys = psoi[psoi_idx].draw_on_image(image_polys, 
                         alpha_face=1, alpha_points=0, alpha_lines=0,
                         size_points=0, size_lines=0, 
-                        color_face=color_dict[polys[file_name]['classes'][psoi_idx]], color_lines=color_dict[polys[file_name]['classes'][psoi_idx]])
+                        color_face=color_dict[polys[file_name]['classes'][psoi_idx]]['color'], color_lines=color_dict[polys[file_name]['classes'][psoi_idx]]['color'])
 
                 # for unknown area
                 regions = mask.astype('int8').copy()
 
                 # for known area
-                for idx, (k, v) in enumerate(color_dict.items()):
+                for k, v in color_dict.items():
                     
                     class_pixels = np.where(
-                        (image_polys[:, :, 0] == v[0]) &
-                        (image_polys[:, :, 1] == v[1]) &
-                        (image_polys[:, :, 2] == v[2])
+                        (image_polys[:, :, 0] == v['color'][0]) &
+                        (image_polys[:, :, 1] == v['color'][1]) &
+                        (image_polys[:, :, 2] == v['color'][2])
                     )
-                    regions[class_pixels] = idx
+                    regions[class_pixels] = v['index']
 
                 np.savetxt(output_region_dir + file_name_only + ".regions.txt", regions[:, :, 0], fmt="%d", delimiter=" ", newline="\n")
             print("Done (" + str(counter) + " / " + str(n) + ") images")

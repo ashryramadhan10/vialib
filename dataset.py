@@ -1,8 +1,14 @@
 import os
 import json
+import re
+import shutil
 
 import numpy as np
 import cv2
+
+import math
+import random
+import copy
 
 from . annotation.shapes import Vialiboundingbox, Vialibpolygon
 from . visualisation.visualizer import VisualizerPolygons, VisualizerBoundingBoxes
@@ -17,8 +23,10 @@ class DatasetPolygon:
     
     # Basic members
     __dataset = None
+    __dataset_dict = {}
     __via = None
     length = 0
+    __input_dir = None
     __output_dir = None
 
     # Object class
@@ -92,10 +100,12 @@ class DatasetPolygon:
                         objs.append(obj)
                     record["annotations"] = objs
                     dataset_list.append(record)
+                    self.__dataset_dict[os.path.basename(filename)] = record
 
             self.__dataset = dataset_list
             self.__via = imgs_ann
             self.length = len(self.__dataset)
+            self.__input_dir = images_directory
             self.__output_dir = output_directory
 
             if not os.path.exists(self.__output_dir):
@@ -129,16 +139,28 @@ class DatasetPolygon:
         """
         print(self.class_list)
 
-    def plot_dataset(self, cols=2, image_start=0, num_of_sample=4, color_dict=None, semantic_segmentation=False, randomness=True):
+    def plot_dataset(self, opacity=0.5, cols=2, image_start=0, num_of_sample=4, color_dict=None, without_bboxes=True, randomness=True):
         """Plot the dataset
         Args:
+            opacity: opacity of alpha face
             cols: nb. fo columns in plot
+            image_start: starting index if randomness is False
             num_of_sample: sample that need to be plotted
             color_dict: color dictionary for each object
-            semantic_segmentation: (for semantic segmentation only) set this to true if you in case semantic segmentation
+            without_bboxes: plot without bounding boxes
             randomness: set True if you want to display your images randomly
         """
-        self.__DatasetVisualizer.plot_dataset(polygon_data=self.__Polygon_data, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, semantic_segmentation=semantic_segmentation, randomness=randomness)
+        self.__DatasetVisualizer.plot_dataset(polygons_data=self.__Polygon_data, opacity=opacity, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, without_bboxes=without_bboxes, randomness=randomness)
+
+    def visualize_keypoints_of_image(self, image, polygons, color=(0, 255, 0), diameter=15):
+        """Visualize the keypoints
+        Args:
+            image: image object (ndarray)
+            polygons: image polygons
+            color: keypoints color
+            diameter: diameter of keypoints
+        """
+        self.__DatasetVisualizer.visualize_keypoints_of_image(image=image, polygons=polygons, color=color, diameter=diameter)
 
     ###########################  CONVERTER ############################################
     def convert_to_yolo_format(self):
@@ -176,11 +198,11 @@ class DatasetPolygon:
         """
         self.__Converter.via2pascalvoc(self.__output_dir)
 
-    def augment(self, aug):
-        self.__Augmenter.augment(aug, self.__output_dir)
+    def augment(self, aug, aug_engine='imgaug'):
+        self.__Augmenter.augment(aug, aug_engine=aug_engine, output_dir=self.__output_dir)
 
-    def transform(self, tf, add_name="", numeric_file_name=False):
-        self.__Augmenter.transform(tf, self.__output_dir, add_name, numeric_file_name)
+    def transform(self, tf, aug_engine='imgaug', add_name='', numeric_file_name=False):
+        self.__Augmenter.transform(aug=tf, aug_engine=aug_engine, output_dir=self.__output_dir, add_name=add_name, numeric_file_name=numeric_file_name)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}
@@ -192,12 +214,78 @@ class DatasetPolygon:
         with open(self.__output_dir + "via_region_data.json", "w") as output_file:
             json.dump(out_anns, output_file)
 
+    def numericalSort(value):
+        numbers = re.compile(r'(\d+)')
+        parts = numbers.split(value)
+        parts[1::2] = map(int, parts[1::2])
+        return parts
+
+    def split_train_test(self, class_list, regex_list, train_ratio=0.8):
+        
+        for regex_idx, regex in enumerate(regex_list):
+            file_list = sorted([f for f in os.listdir(self.__input_dir) if re.search(regex, f)], key=DatasetPolygon.numericalSort)
+
+            # create folder for current regex / class
+            class_output_dir = self.__output_dir + class_list[regex_idx] + "/"
+
+            # calculate the ratio of test dataset
+            test_counter = math.ceil(len(file_list) * (1 - train_ratio))
+
+            # path to original image
+            path_to_original_image = self.__input_dir
+
+            path_to_save_test_image = class_output_dir + "val/"
+            if not os.path.exists(path_to_save_test_image):
+                os.makedirs(path_to_save_test_image)
+
+            path_to_save_train_image = class_output_dir + "train/"
+            if not os.path.exists(path_to_save_train_image):
+                os.makedirs(path_to_save_train_image)
+
+            # shuffle the file list
+            random.shuffle(file_list)
+            train_dataset = file_list[test_counter:]
+            test_dataset = file_list[:test_counter]
+
+            # untuk mendapatkan filename + key harus menggunakan dataset_dict
+            test_via_json = {}
+            for file_name in test_dataset:
+                file_key = self.__dataset_dict[file_name]['key']
+                test_via_json[file_key] = copy.deepcopy(self.__via[file_key])
+
+                image_dst = os.path.join(path_to_save_test_image, file_name)
+                image_src = os.path.join(path_to_original_image, file_name)
+
+                # copy original image to destination path
+                shutil.copy(image_src, image_dst)
+
+            # generate via json for test dataset
+            with open(path_to_save_test_image + "via_region_data.json", "w") as output_file:
+                json.dump(test_via_json, output_file)
+
+            train_via_json = {}
+            for file_name in train_dataset:
+                file_key = self.__dataset_dict[file_name]['key']
+                train_via_json[file_key] = copy.deepcopy(self.__via[file_key])
+
+                image_dst = os.path.join(path_to_save_train_image, file_name)
+                image_src = os.path.join(path_to_original_image, file_name)
+
+                shutil.copy(image_src, image_dst)
+
+            # generate via json for train dataset
+            with open(path_to_save_train_image + "via_region_data.json", "w") as output_file:
+                json.dump(train_via_json, output_file)
+
     # set and get
     def getVIAJSON(self) -> dict:
         return self.__via
 
     def getDataset(self) -> list:
         return self.__dataset
+
+    def getDatasetDict(self) -> dict:
+        return self.__dataset_dict
 
     def getPolygonData(self) -> dict:
         return self.__Polygon_data
@@ -206,6 +294,7 @@ class DatasetBoundingBox:
 
     # Basic members
     __dataset = None
+    __dataset_dict = {}
     __via = None
     length = 0
     __output_dir = None
@@ -280,6 +369,7 @@ class DatasetBoundingBox:
                         objs.append(obj)
                     record["annotations"] = objs
                     dataset_list.append(record)
+                    self.__dataset_dict[os.path.basename(filename)] = record
             
             # set all data class members
             self.__dataset = dataset_list
@@ -319,7 +409,7 @@ class DatasetBoundingBox:
         """
         print(self.class_list)
 
-    def plot_dataset(self, cols=2, image_start=0, num_of_sample=4, color_dict=None, randomness=True):
+    def plot_dataset(self, thickness=5, cols=2, image_start=0, num_of_sample=4, color_dict=None, randomness=True):
         """Plot the dataset
         Args:
             cols: nb. fo columns in plot
@@ -328,7 +418,7 @@ class DatasetBoundingBox:
             semantic_segmentation: (for semantic segmentation only) set this to true if you in case semantic segmentation
             randomness: set True if you want to display your images randomly
         """
-        self.__DatasetVisualizer.plot_dataset(bboxes_data=self.__vialibbox_data, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, randomness=randomness)
+        self.__DatasetVisualizer.plot_dataset(bboxes_data=self.__vialibbox_data, thickness=thickness, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, randomness=randomness)
 
     ###########################  CONVERTER ############################################
     def convert_to_yolo_format(self):
@@ -345,11 +435,11 @@ class DatasetBoundingBox:
         """
         self.__Converter.via2pascalvoc(self.__output_dir)
 
-    def augment(self, aug):
-        self.__Augmenter.augment(aug, self.__output_dir)
+    def augment(self, aug, aug_engine='imgaug'):
+        self.__Augmenter.augment(aug, aug_engine, self.__output_dir)
 
-    def transform(self, tf, add_name="", numeric_file_name=False):
-        self.__Augmenter.transform(tf, self.__output_dir, add_name, numeric_file_name)
+    def transform(self, tf, aug_engine='imgaug', add_name="", numeric_file_name=False):
+        self.__Augmenter.transform(tf, aug_engine, self.__output_dir, add_name, numeric_file_name)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}
@@ -367,6 +457,9 @@ class DatasetBoundingBox:
 
     def getDataset(self) -> list:
         return self.__dataset
+
+    def getDatasetDict(self) -> dict:
+        return self.__dataset_dict
 
     def getBoundingBoxes(self) -> dict:
         return self.__vialibbox_data
