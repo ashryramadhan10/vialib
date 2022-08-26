@@ -339,7 +339,7 @@ class AugmenterBoundingBox:
 
     def augment(self, aug, aug_engine, output_dir):
 
-        if aug_engine == 'imaug':
+        if aug_engine == 'imgaug':
             bboxes_aug_list = []
             aug_via_json = {}
 
