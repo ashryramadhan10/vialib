@@ -149,40 +149,40 @@ class AugmenterPolygon:
                 except:
                     print("Error occurred while copying file.")  
 
-        for imgs_idx in range(len(self.__dataset)):
-            key = self.__dataset[imgs_idx]["key"]
-            aug_via_json_key = "aug_" + key
-            aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
+            for imgs_idx in range(len(self.__dataset)):
+                key = self.__dataset[imgs_idx]["key"]
+                aug_via_json_key = "aug_" + key
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
 
-            if os.path.basename(aug_via_json[aug_via_json_key]['filename']) in all_transformed_keypoints_file_name:
-                aug_idx = all_transformed_keypoints_file_name.index(os.path.basename(aug_via_json[aug_via_json_key]['filename']))
-                aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']  
-                
-                del aug_via_json[aug_via_json_key]["regions"]
+                if os.path.basename(aug_via_json[aug_via_json_key]['filename']) in all_transformed_keypoints_file_name:
+                    aug_idx = all_transformed_keypoints_file_name.index(os.path.basename(aug_via_json[aug_via_json_key]['filename']))
+                    aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']  
+                    
+                    del aug_via_json[aug_via_json_key]["regions"]
 
-                regions = []
-                for tk_idx, transformed_keypoints in enumerate(all_transformed_keypoints[aug_idx]):
-                    regions_data = {
-                        'shape_attributes': {
-                            'name': 'polygon',
-                            'all_points_x': np.array(transformed_keypoints)[:, 0].astype(int).tolist(),
-                            'all_points_y': np.array(transformed_keypoints)[:, 1].astype(int).tolist(),
-                        },
-                        'region_attributes': {
-                            'type': all_classes[aug_idx][tk_idx]
+                    regions = []
+                    for tk_idx, transformed_keypoints in enumerate(all_transformed_keypoints[aug_idx]):
+                        regions_data = {
+                            'shape_attributes': {
+                                'name': 'polygon',
+                                'all_points_x': np.array(transformed_keypoints)[:, 0].astype(int).tolist(),
+                                'all_points_y': np.array(transformed_keypoints)[:, 1].astype(int).tolist(),
+                            },
+                            'region_attributes': {
+                                'type': all_classes[aug_idx][tk_idx]
+                            }
                         }
-                    }
-                    regions.append(regions_data)
-                aug_via_json[aug_via_json_key]["regions"] = regions
-            else:
-                del aug_via_json[aug_via_json_key] 
+                        regions.append(regions_data)
+                    aug_via_json[aug_via_json_key]["regions"] = regions
+                else:
+                    del aug_via_json[aug_via_json_key] 
 
-        out_anns = {}
-        for d in [self.__via, aug_via_json]:
-            out_anns.update(d)
+            out_anns = {}
+            for d in [self.__via, aug_via_json]:
+                out_anns.update(d)
 
-        with open(output_dir + "via_region_data.json", "w") as output_file:
-            json.dump(out_anns, output_file)
+            with open(output_dir + "via_region_data.json", "w") as output_file:
+                json.dump(out_anns, output_file)
 
     def transform(self, aug, aug_engine, output_dir, add_name, numeric_file_name=False):
 

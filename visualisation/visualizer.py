@@ -39,8 +39,8 @@ class VisualizerPolygons:
                 samples = self.__dataset[image_start:(image_start + num_of_sample)]
 
         images_polys = []
-        for sample_idx in range(len(samples)):
-            file_path = samples[sample_idx]['file_name']
+        for sample in samples:
+            file_path = sample['file_name']
             file_name = os.path.basename(file_path)
             
             img = cv2.imread(file_path)
@@ -115,25 +115,25 @@ class VisualizerBoundingBoxes:
                 samples = self.__dataset[image_start:(image_start + num_of_sample)]
 
         images_bboxes = []
-        for sample_idx in range(len(samples)):
-            for file_idx, file_path in enumerate(glob.glob(samples[sample_idx]['file_name'])):
-                file_name = os.path.basename(file_path)
-                
-                img = cv2.imread(file_path)
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        for sample in samples:
+            file_path = sample['file_name']
+            file_name = os.path.basename(file_path)
+            
+            img = cv2.imread(file_path)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-                bbsoi = ia.BoundingBoxesOnImage(bboxes_data[file_name]['bboxes'],
-                            shape=img.shape)
-                
-                if color_dict == None:
-                    image_bboxes = img.copy()
-                    for bbsoi_idx in range(len(bbsoi)):
-                        color = np.random.randint(255, size=(1,3))
-                        image_bboxes = bbsoi[bbsoi_idx].draw_on_image(bbsoi[bbsoi_idx].draw_on_image(image_bboxes, size=thickness, color=color))
-                    images_bboxes.append(ia.imresize_single_image(image_bboxes, 0.5))
-                else:
-                    image_bboxes = img.copy()
-                    for bbsoi_idx in range(len(bbsoi)):
-                        image_bboxes = bbsoi[bbsoi_idx].draw_on_image(image_bboxes, size=thickness, color=color_dict[bboxes_data[file_name]['classes'][bbsoi_idx]])
-                    images_bboxes.append(ia.imresize_single_image(image_bboxes, 0.5))
+            bbsoi = ia.BoundingBoxesOnImage(bboxes_data[file_name]['bboxes'],
+                        shape=img.shape)
+            
+            if color_dict == None:
+                image_bboxes = img.copy()
+                for bbsoi_idx in range(len(bbsoi)):
+                    color = np.random.randint(255, size=(1,3))
+                    image_bboxes = bbsoi[bbsoi_idx].draw_on_image(bbsoi[bbsoi_idx].draw_on_image(image_bboxes, size=thickness, color=color))
+                images_bboxes.append(ia.imresize_single_image(image_bboxes, 0.5))
+            else:
+                image_bboxes = img.copy()
+                for bbsoi_idx in range(len(bbsoi)):
+                    image_bboxes = bbsoi[bbsoi_idx].draw_on_image(image_bboxes, size=thickness, color=color_dict[bboxes_data[file_name]['classes'][bbsoi_idx]])
+                images_bboxes.append(ia.imresize_single_image(image_bboxes, 0.5))
         ia.imshow(ia.draw_grid(images_bboxes, cols=cols))
