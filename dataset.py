@@ -222,6 +222,8 @@ class DatasetPolygon:
 
     def split_train_test(self, class_list, regex_list, train_ratio=0.8):
         
+        test_via_json = {}
+        train_via_json = {}
         for regex_idx, regex in enumerate(regex_list):
             file_list = sorted([f for f in os.listdir(self.__input_dir) if re.search(regex, f)], key=DatasetPolygon.numericalSort)
 
@@ -248,7 +250,7 @@ class DatasetPolygon:
             test_dataset = file_list[:test_counter]
 
             # untuk mendapatkan filename + key harus menggunakan dataset_dict
-            test_via_json = {}
+            
             for file_name in test_dataset:
                 file_key = self.__dataset_dict[file_name]['key']
                 test_via_json[file_key] = copy.deepcopy(self.__via[file_key])
@@ -263,7 +265,6 @@ class DatasetPolygon:
             with open(path_to_save_test_image + "via_region_data.json", "w") as output_file:
                 json.dump(test_via_json, output_file)
 
-            train_via_json = {}
             for file_name in train_dataset:
                 file_key = self.__dataset_dict[file_name]['key']
                 train_via_json[file_key] = copy.deepcopy(self.__via[file_key])
@@ -273,9 +274,9 @@ class DatasetPolygon:
 
                 shutil.copy(image_src, image_dst)
 
-            # generate via json for train dataset
-            with open(path_to_save_train_image + "via_region_data.json", "w") as output_file:
-                json.dump(train_via_json, output_file)
+        # generate via json for train dataset
+        with open(path_to_save_train_image + "via_region_data.json", "w") as output_file:
+            json.dump(train_via_json, output_file)
 
     # set and get
     def getVIAJSON(self) -> dict:
@@ -443,6 +444,8 @@ class DatasetBoundingBox:
 
     def split_train_test(self, class_list, regex_list, train_ratio=0.8):
         
+        test_via_json = {}
+        train_via_json = {}
         for regex_idx, regex in enumerate(regex_list):
             file_list = sorted([f for f in os.listdir(self.__input_dir) if re.search(regex, f)], key=DatasetPolygon.numericalSort)
 
@@ -469,7 +472,7 @@ class DatasetBoundingBox:
             test_dataset = file_list[:test_counter]
 
             # untuk mendapatkan filename + key harus menggunakan dataset_dict
-            test_via_json = {}
+            
             for file_name in test_dataset:
                 file_key = self.__dataset_dict[file_name]['key']
                 test_via_json[file_key] = copy.deepcopy(self.__via[file_key])
@@ -484,7 +487,6 @@ class DatasetBoundingBox:
             with open(path_to_save_test_image + "via_region_data.json", "w") as output_file:
                 json.dump(test_via_json, output_file)
 
-            train_via_json = {}
             for file_name in train_dataset:
                 file_key = self.__dataset_dict[file_name]['key']
                 train_via_json[file_key] = copy.deepcopy(self.__via[file_key])
@@ -494,9 +496,9 @@ class DatasetBoundingBox:
 
                 shutil.copy(image_src, image_dst)
 
-            # generate via json for train dataset
-            with open(path_to_save_train_image + "via_region_data.json", "w") as output_file:
-                json.dump(train_via_json, output_file)
+        # generate via json for train dataset
+        with open(path_to_save_train_image + "via_region_data.json", "w") as output_file:
+            json.dump(train_via_json, output_file)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}

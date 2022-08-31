@@ -105,9 +105,9 @@ class AugmenterPolygon:
                 transformed_keypoints_list = []
 
                 for polygon in polygons:
-                    transposed_polygon = polygon.coords.T.astype(int)
-                    transposed_polygon[0] = transposed_polygon[0].clip(min=0)
-                    transposed_polygon[1] = transposed_polygon[1].clip(min=0)
+                    transposed_polygon = polygon.coords.T.astype(np.uint16)
+                    transposed_polygon[0] = transposed_polygon[0].clip(max=np.max(transposed_polygon[0])-1)
+                    transposed_polygon[1] = transposed_polygon[1].clip(max=np.max(transposed_polygon[1])-1)
                     keypoints = list(zip(transposed_polygon[0], transposed_polygon[1]))
 
                     # augment the image
@@ -256,9 +256,9 @@ class AugmenterPolygon:
                 transformed_keypoints_list = []
 
                 for polygon in polygons:
-                    transposed_polygon = polygon.coords.T.astype(int)
-                    transposed_polygon[0] = transposed_polygon[0].clip(min=0)
-                    transposed_polygon[1] = transposed_polygon[1].clip(min=0)
+                    transposed_polygon = polygon.coords.T.astype(np.uint16)
+                    transposed_polygon[0] = transposed_polygon[0].clip(max=np.max(transposed_polygon[0])-1)
+                    transposed_polygon[1] = transposed_polygon[1].clip(max=np.max(transposed_polygon[1])-1)
                     keypoints = list(zip(transposed_polygon[0], transposed_polygon[1]))
 
                     # augment the image
