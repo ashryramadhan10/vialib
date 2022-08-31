@@ -74,7 +74,7 @@ class AugmenterPolygon:
 
             # more robust to missing images because based on self.__dataset not self.__via
             for k, v in all_transformed.items():
-                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
@@ -156,8 +156,7 @@ class AugmenterPolygon:
                     print("Error occurred while copying file.") 
 
             for k, v in all_transformed.items():
-                via_size = self.__via[v['key']]['size']
-                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
@@ -225,7 +224,7 @@ class AugmenterPolygon:
             
             # more robust to missing images because based on self.__dataset not self.__via
             for k, v in all_transformed.items():
-                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
@@ -295,8 +294,7 @@ class AugmenterPolygon:
                             cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, transformed_image)
 
             for k, v in all_transformed.items():
-                via_size = self.__via[v['key']]['size']
-                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
@@ -381,7 +379,7 @@ class AugmenterBoundingBox:
                     print("Error occurred while copying file.")
 
             for k, v in all_transformed.items():
-                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
@@ -454,8 +452,7 @@ class AugmenterBoundingBox:
                     print("Error occurred while copying file.")
 
             for k, v in all_transformed.items():
-                via_size = self.__via[v['key']]['size']
-                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
@@ -525,7 +522,7 @@ class AugmenterBoundingBox:
                         cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
 
             for k, v in all_transformed.items():
-                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
@@ -584,8 +581,7 @@ class AugmenterBoundingBox:
                             cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, transformed_image)
             
             for k, v in all_transformed.items():
-                via_size = self.__via[v['key']]['size']
-                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
                 aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
                 aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
