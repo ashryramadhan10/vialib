@@ -198,11 +198,11 @@ class DatasetPolygon:
         """
         self.__Converter.via2pascalvoc(self.__output_dir)
 
-    def augment(self, aug, aug_engine='imgaug'):
-        self.__Augmenter.augment(aug, aug_engine=aug_engine, output_dir=self.__output_dir)
+    def augment(self, aug, aug_engine='imgaug', repeat=1):
+        self.__Augmenter.augment(aug, aug_engine=aug_engine, output_dir=self.__output_dir, repeat=repeat)
 
-    def transform(self, tf, aug_engine='imgaug', add_name='', numeric_file_name=False):
-        self.__Augmenter.transform(aug=tf, aug_engine=aug_engine, output_dir=self.__output_dir, add_name=add_name, numeric_file_name=numeric_file_name)
+    def transform(self, tf, aug_engine='imgaug', add_name='', numeric_file_name=False, repeat=1):
+        self.__Augmenter.transform(aug=tf, aug_engine=aug_engine, output_dir=self.__output_dir, add_name=add_name, numeric_file_name=numeric_file_name, repeat=repeat)
 
     def merge(self, dataset_list) -> None:
         out_anns = {}
@@ -436,11 +436,11 @@ class DatasetBoundingBox:
         """
         self.__Converter.via2pascalvoc(self.__output_dir)
 
-    def augment(self, aug, aug_engine='imgaug'):
-        self.__Augmenter.augment(aug, aug_engine, self.__output_dir)
+    def augment(self, aug, aug_engine='imgaug', repeat=1):
+        self.__Augmenter.augment(aug, aug_engine, self.__output_dir, repeat=repeat)
 
-    def transform(self, tf, aug_engine='imgaug', add_name="", numeric_file_name=False):
-        self.__Augmenter.transform(tf, aug_engine, self.__output_dir, add_name, numeric_file_name)
+    def transform(self, tf, aug_engine='imgaug', add_name="", numeric_file_name=False, repeat=1):
+        self.__Augmenter.transform(tf, aug_engine, self.__output_dir, add_name, numeric_file_name, repeat=repeat)
 
     def split_train_test(self, class_list, regex_list, train_ratio=0.8):
         

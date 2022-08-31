@@ -22,7 +22,10 @@ class AugmenterPolygon:
         self.__via = via
         self.__polys = polys
 
-    def augment(self, aug, aug_engine, output_dir):
+    def augment(self, aug, aug_engine, output_dir, repeat):
+
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
 
         if aug_engine == 'imgaug':
             psoi_aug_list = []
@@ -38,9 +41,6 @@ class AugmenterPolygon:
                             shape=img.shape)
 
                 image_aug, psoi_aug = aug(image=img, polygons=psoi)
-
-                if not os.path.exists(output_dir):
-                    os.mkdir(output_dir)
 
                 cv2.imwrite(output_dir + "aug_" + file_name, image_aug)
 
@@ -89,47 +89,47 @@ class AugmenterPolygon:
         elif aug_engine == 'albumentations':
             
             aug_via_json = {}
-            all_transformed_keypoints = []
-            all_transformed_keypoints_file_name = []
-            all_classes = []
+            all_transformed = {}
 
             for dataset in self.__dataset:
-                seed_num = random.randint(0, 100)
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
 
                 image = cv2.imread(file_path)
                 polygons = self.__polys[file_name]['polygons']
 
-                # seperate the joined keypoints (image_keypoints)
-                transformed_keypoints_list = []
+                for repeat_idx in range(0, repeat):
 
-                for polygon in polygons:
-                    transposed_polygon = polygon.coords.T.astype(np.uint16)
-                    transposed_polygon[0] = transposed_polygon[0].clip(max=np.max(transposed_polygon[0])-1)
-                    transposed_polygon[1] = transposed_polygon[1].clip(max=np.max(transposed_polygon[1])-1)
-                    keypoints = list(zip(transposed_polygon[0], transposed_polygon[1]))
+                    # seperate the joined keypoints (image_keypoints)
+                    transformed_keypoints_list = []
+                    seed_num = random.randint(0, 100)
 
-                    # augment the image
-                    random.seed(seed_num)
-                    transformed = aug(image=image, keypoints=keypoints)
-                    transformed_image = transformed['image']
-                    transformed_keypoints = transformed['keypoints']
+                    for polygon in polygons:
+                        transposed_polygon = polygon.coords.T.astype(np.uint16)
+                        transposed_polygon[0] = transposed_polygon[0].clip(max=np.max(transposed_polygon[0])-1)
+                        transposed_polygon[1] = transposed_polygon[1].clip(max=np.max(transposed_polygon[1])-1)
+                        keypoints = list(zip(transposed_polygon[0], transposed_polygon[1]))
 
-                    # if there is any keypoints on the image
-                    if len(transformed_keypoints) > 0:
-                        transformed_keypoints_list.append(transformed_keypoints)
+                        # augment the image
+                        random.seed(seed_num)
+                        transformed = aug(image=image, keypoints=keypoints)
+                        transformed_image = transformed['image']
+                        transformed_keypoints = transformed['keypoints']
 
-                # append to global all_transformed_keypoints list
-                if len(transformed_keypoints_list) > 0:
-                    all_transformed_keypoints.append(transformed_keypoints_list)
-                    all_transformed_keypoints_file_name.append(os.path.basename(file_name))
-                    all_classes.append(self.__polys[file_name]['classes'])
+                        # if there is any keypoints on the image
+                        if len(transformed_keypoints) > 0:
+                            transformed_keypoints_list.append(transformed_keypoints)
 
-                    if not os.path.exists(output_dir):
-                        os.mkdir(output_dir)
+                    # append to global all_transformed_keypoints list
+                    if len(transformed_keypoints_list) > 0:
+                        all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                            'key': dataset['key'],
+                            'keypoints': transformed_keypoints_list,
+                            'file_name': "aug_" + str(repeat_idx).zfill(2) + "_" + file_name,
+                            'classes': self.__polys[file_name]['classes'],
+                        }
 
-                    cv2.imwrite(output_dir + "aug_" + file_name, transformed_image)
+                        cv2.imwrite(output_dir + "aug_" + str(repeat_idx).zfill(2) + "_" + file_name, transformed_image)
 
                 # copy original file
                 source = file_path
@@ -147,35 +147,30 @@ class AugmenterPolygon:
                 
                 # For other errors
                 except:
-                    print("Error occurred while copying file.")  
+                    print("Error occurred while copying file.") 
 
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-                aug_via_json_key = "aug_" + key
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
+            for k, v in all_transformed.items():
+                via_size = self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
-                if os.path.basename(aug_via_json[aug_via_json_key]['filename']) in all_transformed_keypoints_file_name:
-                    aug_idx = all_transformed_keypoints_file_name.index(os.path.basename(aug_via_json[aug_via_json_key]['filename']))
-                    aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']  
-                    
-                    del aug_via_json[aug_via_json_key]["regions"]
+                del aug_via_json[aug_via_json_key]['regions']
 
-                    regions = []
-                    for tk_idx, transformed_keypoints in enumerate(all_transformed_keypoints[aug_idx]):
-                        regions_data = {
-                            'shape_attributes': {
-                                'name': 'polygon',
-                                'all_points_x': np.array(transformed_keypoints)[:, 0].astype(int).tolist(),
-                                'all_points_y': np.array(transformed_keypoints)[:, 1].astype(int).tolist(),
-                            },
-                            'region_attributes': {
-                                'type': all_classes[aug_idx][tk_idx]
-                            }
+                regions = []
+                for k_idx, keypoints in enumerate(v['keypoints']):
+                    regions_data = {
+                        'shape_attributes': {
+                            'name': 'polygon',
+                            'all_points_x': np.array(keypoints)[:, 0].astype(np.uint16).tolist(),
+                            'all_points_y': np.array(keypoints)[:, 1].astype(np.uint16).tolist(),
+                        },
+                        'region_attributes': {
+                            'type': v['classes'][k_idx]
                         }
-                        regions.append(regions_data)
-                    aug_via_json[aug_via_json_key]["regions"] = regions
-                else:
-                    del aug_via_json[aug_via_json_key] 
+                    }
+                    regions.append(regions_data)
+                aug_via_json[aug_via_json_key]["regions"] = regions
 
             out_anns = {}
             for d in [self.__via, aug_via_json]:
@@ -184,7 +179,10 @@ class AugmenterPolygon:
             with open(output_dir + "via_region_data.json", "w") as output_file:
                 json.dump(out_anns, output_file)
 
-    def transform(self, aug, aug_engine, output_dir, add_name, numeric_file_name=False):
+    def transform(self, aug, aug_engine, output_dir, add_name, numeric_file_name, repeat):
+
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
 
         if aug_engine == 'imgaug':
             psoi_aug_list = []
@@ -200,9 +198,6 @@ class AugmenterPolygon:
                             shape=img.shape)
 
                 image_aug, psoi_aug = aug(image=img, polygons=psoi)
-
-                if not os.path.exists(output_dir):
-                    os.mkdir(output_dir)
 
                 if numeric_file_name:
                     cv2.imwrite(output_dir + add_name + str(dataset_idx) + "." + file_name.split(".")[1], image_aug)
@@ -239,12 +234,10 @@ class AugmenterPolygon:
 
         elif aug_engine == 'albumentations':
             aug_via_json = {}
-            all_transformed_keypoints = []
-            all_transformed_keypoints_file_name = []
-            all_classes = []
+            all_transformed = {}
 
             for dataset_idx, dataset in enumerate(self.__dataset):
-                seed_num = random.randint(0, 100)
+                
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
 
@@ -252,76 +245,70 @@ class AugmenterPolygon:
 
                 polygons = self.__polys[file_name]['polygons']
 
-                # seperate the joined keypoints (image_keypoints)
-                transformed_keypoints_list = []
+                for repeat_idx in range(0, repeat):
+                    # seperate the joined keypoints (image_keypoints)
+                    transformed_keypoints_list = []
+                    seed_num = random.randint(0, 100)
 
-                for polygon in polygons:
-                    transposed_polygon = polygon.coords.T.astype(np.uint16)
-                    transposed_polygon[0] = transposed_polygon[0].clip(max=np.max(transposed_polygon[0])-1)
-                    transposed_polygon[1] = transposed_polygon[1].clip(max=np.max(transposed_polygon[1])-1)
-                    keypoints = list(zip(transposed_polygon[0], transposed_polygon[1]))
+                    for polygon in polygons:
+                        transposed_polygon = polygon.coords.T.astype(np.uint16)
+                        transposed_polygon[0] = transposed_polygon[0].clip(max=np.max(transposed_polygon[0])-1)
+                        transposed_polygon[1] = transposed_polygon[1].clip(max=np.max(transposed_polygon[1])-1)
+                        keypoints = list(zip(transposed_polygon[0], transposed_polygon[1]))
 
-                    # augment the image
-                    random.seed(seed_num)
-                    transformed = aug(image=image, keypoints=keypoints)
-                    transformed_image = transformed['image']
-                    transformed_keypoints = transformed['keypoints']
+                        # augment the image
+                        random.seed(seed_num)
+                        transformed = aug(image=image, keypoints=keypoints)
+                        transformed_image = transformed['image']
+                        transformed_keypoints = transformed['keypoints']
 
-                    if len(transformed_keypoints) > 0:
-                        transformed_keypoints_list.append(transformed_keypoints)
+                        # you can fine tuning this parameters
+                        if len(transformed_keypoints) > 0:
+                            transformed_keypoints_list.append(transformed_keypoints)
 
-                 # append to global all_transformed_keypoints list
-                if len(transformed_keypoints_list) > 0:
-                    all_transformed_keypoints.append(transformed_keypoints_list)
-                    all_transformed_keypoints_file_name.append(os.path.basename(file_name))
-                    all_classes.append(self.__polys[file_name]['classes'])
-
-                    if not os.path.exists(output_dir):
-                        os.mkdir(output_dir)
-
-                    if numeric_file_name:
-                        cv2.imwrite(output_dir + add_name + str(dataset_idx) + "." + file_name.split(".")[1], transformed_image)
-                    else:
-                        cv2.imwrite(output_dir + add_name + file_name, transformed_image)
-
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-
-                if numeric_file_name:
-                    via_filename = self.__via[key]['filename']
-                    via_size = self.__via[key]['size']
-                    aug_via_json_key = add_name + str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                else:
-                    aug_via_json_key = add_name + key
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-
-                if os.path.basename(aug_via_json[aug_via_json_key]['filename']) in all_transformed_keypoints_file_name:
-                    aug_idx = all_transformed_keypoints_file_name.index(os.path.basename(aug_via_json[aug_via_json_key]['filename']))
-
-                    if numeric_file_name:
-                        aug_via_json[aug_via_json_key]['filename'] = add_name + str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
-                    else:
-                        aug_via_json[aug_via_json_key]['filename'] = add_name + aug_via_json[aug_via_json_key]['filename']
-                    
-                    del aug_via_json[aug_via_json_key]["regions"]
-
-                    regions = []
-                    for tk_idx, transformed_keypoints in enumerate(all_transformed_keypoints[aug_idx]):
-                        regions_data = {
-                            'shape_attributes': {
-                                'name': 'polygon',
-                                'all_points_x': np.array(transformed_keypoints)[:, 0].astype(int).tolist(),
-                                'all_points_y': np.array(transformed_keypoints)[:, 1].astype(int).tolist(),
-                            },
-                            'region_attributes': {
-                                'type': all_classes[aug_idx][tk_idx]
+                    # append to global all_transformed_keypoints list
+                    if len(transformed_keypoints_list) > 0:
+                        if numeric_file_name:
+                            all_transformed[add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                                'key': dataset['key'],
+                                'keypoints': transformed_keypoints_list,
+                                'file_name': add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                                'classes': self.__polys[file_name]['classes'],
                             }
+
+                            cv2.imwrite(output_dir + add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], transformed_image)
+                        else:
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                                'key': dataset['key'],
+                                'keypoints': transformed_keypoints_list,
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                                'classes': self.__polys[file_name]['classes'],
+                            }
+
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, transformed_image)
+
+            for k, v in all_transformed.items():
+                via_size = self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
+
+                del aug_via_json[aug_via_json_key]['regions']
+
+                regions = []
+                for k_idx, keypoints in enumerate(v['keypoints']):
+                    regions_data = {
+                        'shape_attributes': {
+                            'name': 'polygon',
+                            'all_points_x': np.array(keypoints)[:, 0].astype(np.uint16).tolist(),
+                            'all_points_y': np.array(keypoints)[:, 1].astype(np.uint16).tolist(),
+                        },
+                        'region_attributes': {
+                            'type': v['classes'][k_idx]
                         }
-                        regions.append(regions_data)
-                    aug_via_json[aug_via_json_key]["regions"] = regions
-                else:
-                    del aug_via_json[aug_via_json_key]
+                    }
+                    regions.append(regions_data)
+                aug_via_json[aug_via_json_key]["regions"] = regions
 
             with open(output_dir + "via_region_data.json", "w") as output_file:
                 json.dump(aug_via_json, output_file)
@@ -337,7 +324,10 @@ class AugmenterBoundingBox:
         self.__via = via
         self.__bboxes = bboxes
 
-    def augment(self, aug, aug_engine, output_dir):
+    def augment(self, aug, aug_engine, output_dir, repeat):
+
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
 
         if aug_engine == 'imgaug':
             bboxes_aug_list = []
@@ -353,9 +343,6 @@ class AugmenterBoundingBox:
                             shape=img.shape)
 
                 image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
-
-                if not os.path.exists(output_dir):
-                    os.mkdir(output_dir)
 
                 cv2.imwrite(output_dir + "aug_" + file_name, image_aug)
 
@@ -404,39 +391,38 @@ class AugmenterBoundingBox:
                 json.dump(out_anns, output_file)
 
         elif aug_engine == 'albumentations':
-            all_transformed_bboxes = []
-            all_transformed_bboxes_file_name = []
+            all_transformed = {}
             aug_via_json = {}
 
             for dataset in self.__dataset:
-                seed_num = random.randint(0, 100)
+                
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
 
                 image = cv2.imread(file_path)
-
                 annos = dataset['annotations']
-                bboxes = []
 
-                for anno in annos:
-                    bbox = [anno['bbox'][0], anno['bbox'][1], anno['bbox'][2], anno['bbox'][3], anno['class']]
-                    bboxes.append(bbox)
+                for repeat_idx in range(0, repeat):
+                    bboxes = []
+                    seed_num = random.randint(0, 100)
 
-                random.seed(seed_num)
-                transformed = aug(image=image, bboxes=bboxes)
-                transformed_image = transformed['image']
-                transformed_bboxes = transformed['bboxes']
+                    for anno in annos:
+                        bbox = [anno['bbox'][0], anno['bbox'][1], anno['bbox'][2], anno['bbox'][3], anno['class']]
+                        bboxes.append(bbox)
 
-                if not os.path.exists(output_dir):
-                    os.mkdir(output_dir)
+                    random.seed(seed_num)
+                    transformed = aug(image=image, bboxes=bboxes)
+                    transformed_image = transformed['image']
+                    transformed_bboxes = transformed['bboxes']
 
-                if len(transformed_bboxes) > 0:
+                    if len(transformed_bboxes) > 0:
+                        all_transformed['aug_' + str(repeat_idx).zfill(2) + '_' + file_name] = {
+                            'key': dataset['key'],
+                            'bboxes': transformed_bboxes,
+                            'file_name': 'aug_' + str(repeat_idx).zfill(2) + '_' + file_name,
+                        }
 
-                    # append transformed bboxes
-                    all_transformed_bboxes.append(transformed_bboxes)
-                    all_transformed_bboxes_file_name.append(os.path.basename(file_name))
-
-                    cv2.imwrite(output_dir + "aug_" + file_name, transformed_image)
+                        cv2.imwrite(output_dir + 'aug_' + str(repeat_idx).zfill(2) + '_' + file_name, transformed_image)
 
                 # copy original file
                 source = file_path
@@ -456,37 +442,30 @@ class AugmenterBoundingBox:
                 except:
                     print("Error occurred while copying file.")
 
-            # more robust to missing images
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-                aug_via_json_key = "aug_" + key
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
+            for k, v in all_transformed.items():
+                via_size = self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
-                if os.path.basename(aug_via_json[aug_via_json_key]['filename']) in all_transformed_bboxes_file_name:
-                    aug_idx = all_transformed_bboxes_file_name.index(os.path.basename(aug_via_json[aug_via_json_key]['filename']))
-                    aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']
-                    
-                    # clear regions
-                    del aug_via_json[aug_via_json_key]["regions"]
+                del aug_via_json[aug_via_json_key]['regions']
 
-                    regions = []
-                    for transformed_bboxes in all_transformed_bboxes[aug_idx]:
-                        regions_data = {
-                            'shape_attributes': {
-                                'name': 'rect',
-                                'x': int(transformed_bboxes[0]),
-                                'y': int(transformed_bboxes[1]),
-                                'width': int(transformed_bboxes[2] - transformed_bboxes[0]),
-                                'height': int(transformed_bboxes[3] - transformed_bboxes[1]),
-                            },
-                            'region_attributes': {
-                                'type': transformed_bboxes[4]
-                            }
+                regions = []
+                for transformed_bboxes in v['bboxes']:
+                    regions_data = {
+                        'shape_attributes': {
+                            'name': 'rect',
+                            'x': int(transformed_bboxes[0]),
+                            'y': int(transformed_bboxes[1]),
+                            'width': int(transformed_bboxes[2] - transformed_bboxes[0]),
+                            'height': int(transformed_bboxes[3] - transformed_bboxes[1]),
+                        },
+                        'region_attributes': {
+                            'type': transformed_bboxes[4]
                         }
-                        regions.append(regions_data)
-                    aug_via_json[aug_via_json_key]["regions"] = regions
-                else:
-                    del aug_via_json[aug_via_json_key] # delete if not exist in all_transformed_bboxes_file_name
+                    }
+                    regions.append(regions_data)
+                aug_via_json[aug_via_json_key]["regions"] = regions
 
             out_anns = {}
             for d in [self.__via, aug_via_json]:
@@ -495,7 +474,11 @@ class AugmenterBoundingBox:
             with open(output_dir + "via_region_data.json", "w") as output_file:
                 json.dump(out_anns, output_file)
                     
-    def transform(self, aug, aug_engine, output_dir, add_name="", numeric_file_name=False):
+    def transform(self, aug, aug_engine, output_dir, add_name, numeric_file_name, repeat):
+        
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
         if aug_engine == 'imgaug':
             bboxes_aug_list = []
             aug_via_json = {}
@@ -511,9 +494,6 @@ class AugmenterBoundingBox:
                             shape=img.shape)
 
                 image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
-
-                if not os.path.exists(output_dir):
-                    os.mkdir(output_dir)
 
                 if numeric_file_name:
                     cv2.imwrite(output_dir + add_name + str(dataset_json_idx) + "." + file_name.split(".")[1], image_aug)
@@ -550,9 +530,7 @@ class AugmenterBoundingBox:
                 json.dump(aug_via_json, output_file)
 
         elif aug_engine == 'albumentations':
-            
-            all_transformed_bboxes = []
-            all_transformed_bboxes_file_name = []
+            all_transformed = {}
             aug_via_json = {}
 
             for dataset in self.__dataset:
@@ -561,75 +539,62 @@ class AugmenterBoundingBox:
                 file_name = os.path.basename(file_path)
 
                 image = cv2.imread(file_path)
-
                 annos = dataset['annotations']
-                bboxes = []
 
-                for anno in annos:
-                    bbox = [anno['bbox'][0], anno['bbox'][1], anno['bbox'][2], anno['bbox'][3], anno['class']]
-                    bboxes.append(bbox)
+                for repeat_idx in range(0, repeat):
+                    bboxes = []
+                    seed_num = random.randint(0, 100)
 
-                random.seed(seed_num)
-                transformed = aug(image=image, bboxes=bboxes)
-                transformed_image = transformed['image']
-                transformed_bboxes = transformed['bboxes']
+                    for anno in annos:
+                        bbox = [anno['bbox'][0], anno['bbox'][1], anno['bbox'][2], anno['bbox'][3], anno['class']]
+                        bboxes.append(bbox)
 
-                if not os.path.exists(output_dir):
-                    os.mkdir(output_dir)
+                    random.seed(seed_num)
+                    transformed = aug(image=image, bboxes=bboxes)
+                    transformed_image = transformed['image']
+                    transformed_bboxes = transformed['bboxes']
 
-                if len(transformed_bboxes) > 0:
+                    if len(transformed_bboxes) > 0:
 
-                    # append transformed bboxes
-                    all_transformed_bboxes.append(transformed_bboxes)
-                    all_transformed_bboxes_file_name.append(os.path.basename(file_name))
-
-                    if numeric_file_name:
-                        cv2.imwrite(output_dir + add_name + str(dataset_json_idx) + "." + file_name.split(".")[1], transformed_image)
-                    else:
-                        cv2.imwrite(output_dir + add_name + file_name, transformed_image)
-
-            # more robust to missing images
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-
-                if numeric_file_name:
-                    via_filename = self.__via[key]['filename']
-                    via_size = self.__via[key]['size']
-                    aug_via_json_key = add_name + str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                else:
-                    aug_via_json_key = add_name + key
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-
-                if os.path.basename(aug_via_json[aug_via_json_key]['filename']) in all_transformed_bboxes_file_name:
-                    aug_idx = all_transformed_bboxes_file_name.index(os.path.basename(aug_via_json[aug_via_json_key]['filename']))
-                    
-                    if numeric_file_name:
-                        aug_via_json[aug_via_json_key]['filename'] = add_name + str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
-                    else:
-                        aug_via_json[aug_via_json_key]['filename'] = add_name + aug_via_json[aug_via_json_key]['filename']
-                    
-                    # clear regions
-                    del aug_via_json[aug_via_json_key]["regions"]
-
-                    regions = []
-                    for transformed_bboxes in all_transformed_bboxes[aug_idx]:
-                        regions_data = {
-                            'shape_attributes': {
-                                'name': 'rect',
-                                'x': int(transformed_bboxes[0]),
-                                'y': int(transformed_bboxes[1]),
-                                'width': int(transformed_bboxes[2] - transformed_bboxes[0]),
-                                'height': int(transformed_bboxes[3] - transformed_bboxes[1]),
-                            },
-                            'region_attributes': {
-                                'type': transformed_bboxes[4]
+                        if numeric_file_name:
+                            all_transformed[add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                                'key': dataset['key'],
+                                'bboxes': transformed_bboxes,
+                                'file_name': add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
                             }
+                            cv2.imwrite(output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], transformed_image)
+                        else:
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                                'key': dataset['key'],
+                                'bboxes': transformed_bboxes,
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                            }
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, transformed_image)
+            
+            for k, v in all_transformed.items():
+                via_size = self.__via[v['key']]['size']
+                aug_via_json_key = v['file_name'] + str(via_size)
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
+
+                del aug_via_json[aug_via_json_key]['regions']
+
+                regions = []
+                for transformed_bboxes in v['bboxes']:
+                    regions_data = {
+                        'shape_attributes': {
+                            'name': 'rect',
+                            'x': int(transformed_bboxes[0]),
+                            'y': int(transformed_bboxes[1]),
+                            'width': int(transformed_bboxes[2] - transformed_bboxes[0]),
+                            'height': int(transformed_bboxes[3] - transformed_bboxes[1]),
+                        },
+                        'region_attributes': {
+                            'type': transformed_bboxes[4]
                         }
-                        regions.append(regions_data)
-                    aug_via_json[aug_via_json_key]["regions"] = regions
-                else:
-                    del aug_via_json[aug_via_json_key] # delete if not exist in all_transformed_bboxes_file_name
+                    }
+                    regions.append(regions_data)
+                aug_via_json[aug_via_json_key]["regions"] = regions
 
             with open(output_dir + "via_region_data.json", "w") as output_file:
                 json.dump(aug_via_json, output_file)
