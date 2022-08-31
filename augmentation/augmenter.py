@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from vialib.converter.format import Pascalvocformat
 import numpy as np
 import random
+import imgaug as ia
 
 class AugmenterPolygon:
 
@@ -28,7 +29,7 @@ class AugmenterPolygon:
             os.mkdir(output_dir)
 
         if aug_engine == 'imgaug':
-            psoi_aug_list = []
+            all_transformed = {}
             aug_via_json = {}
 
             for dataset in self.__dataset:
@@ -40,9 +41,18 @@ class AugmenterPolygon:
                 psoi = ia.PolygonsOnImage(self.__polys[file_name]['polygons'],
                             shape=img.shape)
 
-                image_aug, psoi_aug = aug(image=img, polygons=psoi)
+                for repeat_idx in range(0, repeat):
+                    seed_num = random.randint(0, 100)
+                    ia.seed(seed_num)
+                    image_aug, psoi_aug = aug(image=img, polygons=psoi)
 
-                cv2.imwrite(output_dir + "aug_" + file_name, image_aug)
+                    cv2.imwrite(output_dir + "aug_" + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
+
+                    all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                        'key': dataset['key'],
+                        'psoi': psoi_aug,
+                        'file_name': "aug_" + str(repeat_idx).zfill(2) + "_" + file_name,
+                    }
 
                 # copy original file
                 source = file_path
@@ -62,22 +72,18 @@ class AugmenterPolygon:
                 except:
                     print("Error occurred while copying file.")
 
-                # add psoi aug to list
-                psoi_aug_list.append(psoi_aug)
-
             # more robust to missing images because based on self.__dataset not self.__via
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-                aug_via_json_key = "aug_" + key
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']
-                
+            for k, v in all_transformed.items():
+                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
+
                 annos = aug_via_json[aug_via_json_key]["regions"]
                 if len(annos) > 0:
                     for anno_idx, anno in enumerate(annos):
                         anno = anno["shape_attributes"]
-                        anno["all_points_x"] = [l.tolist() for l in psoi_aug_list[imgs_idx][anno_idx].exterior[:,0].astype(int)]
-                        anno["all_points_y"] = [l.tolist() for l in psoi_aug_list[imgs_idx][anno_idx].exterior[:,1].astype(int)]
+                        anno["all_points_x"] = [l.tolist() for l in v['psoi'][anno_idx].exterior[:,0].astype(int)]
+                        anno["all_points_y"] = [l.tolist() for l in v['psoi'][anno_idx].exterior[:,1].astype(int)]
 
             out_anns = {}
             for d in [self.__via, aug_via_json]:
@@ -185,7 +191,7 @@ class AugmenterPolygon:
             os.mkdir(output_dir)
 
         if aug_engine == 'imgaug':
-            psoi_aug_list = []
+            all_transformed = {}
             aug_via_json = {}
 
             for dataset_idx, dataset in enumerate(self.__dataset):
@@ -197,37 +203,38 @@ class AugmenterPolygon:
                 psoi = ia.PolygonsOnImage(self.__polys[file_name]['polygons'],
                             shape=img.shape)
 
-                image_aug, psoi_aug = aug(image=img, polygons=psoi)
+                for repeat_idx in range(0, repeat):
+                    seed_num = random.randint(0, 100)
+                    ia.seed(seed_num)
+                    image_aug, psoi_aug = aug(image=img, polygons=psoi)
 
-                if numeric_file_name:
-                    cv2.imwrite(output_dir + add_name + str(dataset_idx) + "." + file_name.split(".")[1], image_aug)
-                else:
-                    cv2.imwrite(output_dir + add_name + file_name, image_aug)
+                    if numeric_file_name:
+                        all_transformed[add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                            'key': dataset['key'],
+                            'psoi': psoi_aug,
+                            'file_name': add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                        }
+                        cv2.imwrite(output_dir + add_name + str(dataset_idx) + "." + file_name.split(".")[1], image_aug)
+                    else:
+                        all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                            'key': dataset['key'],
+                            'psoi': psoi_aug,
+                            'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                        }
+                        cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
+            
+            # more robust to missing images because based on self.__dataset not self.__via
+            for k, v in all_transformed.items():
+                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
-                # add psoi aug to list
-                psoi_aug_list.append(psoi_aug)
-
-            # more robust to missing images
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-
-                if numeric_file_name:
-                    via_filename = self.__via[key]['filename']
-                    via_size = self.__via[key]['size']
-                    aug_via_json_key = add_name + str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                    aug_via_json[aug_via_json_key]['filename'] = add_name + str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
-                else:
-                    aug_via_json_key = add_name + key
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                    aug_via_json[aug_via_json_key]['filename'] = add_name + aug_via_json[aug_via_json_key]['filename']
-                
                 annos = aug_via_json[aug_via_json_key]["regions"]
                 if len(annos) > 0:
                     for anno_idx, anno in enumerate(annos):
                         anno = anno["shape_attributes"]
-                        anno["all_points_x"] = [l.tolist() for l in psoi_aug_list[imgs_idx][anno_idx].exterior[:,0].astype(int)]
-                        anno["all_points_y"] = [l.tolist() for l in psoi_aug_list[imgs_idx][anno_idx].exterior[:,1].astype(int)]
+                        anno["all_points_x"] = [l.tolist() for l in v['psoi'][anno_idx].exterior[:,0].astype(int)]
+                        anno["all_points_y"] = [l.tolist() for l in v['psoi'][anno_idx].exterior[:,1].astype(int)]
 
             with open(output_dir + "via_region_data.json", "w") as output_file:
                 json.dump(aug_via_json, output_file)
@@ -330,7 +337,7 @@ class AugmenterBoundingBox:
             os.mkdir(output_dir)
 
         if aug_engine == 'imgaug':
-            bboxes_aug_list = []
+            all_transformed = {}
             aug_via_json = {}
 
             for dataset in self.__dataset:
@@ -341,10 +348,19 @@ class AugmenterBoundingBox:
 
                 bbsoi = ia.BoundingBoxesOnImage(self.__bboxes[file_name]['bboxes'],
                             shape=img.shape)
+                
+                for repeat_idx in range(0, repeat):
+                    seed_num = random.randint(0, 100)
+                    ia.seed(seed_num)
+                    image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
 
-                image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
+                    all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                        'key': dataset['key'],
+                        'bbsoi': bbsoi_aug,
+                        'file_name': "aug_" + str(repeat_idx).zfill(2) + "_" + file_name,
+                    }
 
-                cv2.imwrite(output_dir + "aug_" + file_name, image_aug)
+                    cv2.imwrite(output_dir + "aug_" + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
 
                 # copy original file
                 source = file_path
@@ -364,24 +380,19 @@ class AugmenterBoundingBox:
                 except:
                     print("Error occurred while copying file.")
 
-                # add psoi aug to list
-                bboxes_aug_list.append(bbsoi_aug)
+            for k, v in all_transformed.items():
+                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
-            # more robust to missing images
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-                aug_via_json_key = "aug_" + key
-                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                aug_via_json[aug_via_json_key]['filename'] = "aug_" + aug_via_json[aug_via_json_key]['filename']
-                
                 annos = aug_via_json[aug_via_json_key]["regions"]
                 if len(annos) > 0:
                     for anno_idx, anno in enumerate(annos):
                         anno = anno["shape_attributes"]
-                        anno["x"] = int(bboxes_aug_list[imgs_idx][anno_idx].x1)
-                        anno["y"] = int(bboxes_aug_list[imgs_idx][anno_idx].y1)
-                        anno["width"] = int(bboxes_aug_list[imgs_idx][anno_idx].x2 - bboxes_aug_list[imgs_idx][anno_idx].x1)
-                        anno["height"] = int(bboxes_aug_list[imgs_idx][anno_idx].y2 - bboxes_aug_list[imgs_idx][anno_idx].y1)
+                        anno["x"] = int(v['bbsoi'][anno_idx].x1)
+                        anno["y"] = int(v['bbsoi'][anno_idx].y1)
+                        anno["width"] = int(v['bbsoi'][anno_idx].x2 - v['bbsoi'][anno_idx].x1)
+                        anno["height"] = int(v['bbsoi'][anno_idx].y2 - v['bbsoi'][anno_idx].y1)
 
             out_anns = {}
             for d in [self.__via, aug_via_json]:
@@ -480,7 +491,7 @@ class AugmenterBoundingBox:
             os.mkdir(output_dir)
 
         if aug_engine == 'imgaug':
-            bboxes_aug_list = []
+            all_transformed = {}
             aug_via_json = {}
 
             for dataset_json_idx in range(len(self.__dataset)):
@@ -493,38 +504,39 @@ class AugmenterBoundingBox:
                 bbsoi = ia.BoundingBoxesOnImage(self.__bboxes[file_name]['bboxes'],
                             shape=img.shape)
 
-                image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
+                for repeat_idx in range(0, repeat):
+                    seed_num = random.randint(0, 100)
+                    ia.seed(seed_num)
+                    image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
 
-                if numeric_file_name:
-                    cv2.imwrite(output_dir + add_name + str(dataset_json_idx) + "." + file_name.split(".")[1], image_aug)
-                else:
-                    cv2.imwrite(output_dir + add_name + file_name, image_aug)
+                    if numeric_file_name:
+                        all_transformed[output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                            'key': dataset['key'],
+                            'bbsoi': bbsoi_aug,
+                            'file_name': output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                        }
+                        cv2.imwrite(output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], image_aug)
+                    else:
+                        all_transformed[output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                            'key': dataset['key'],
+                            'bbsoi': bbsoi_aug,
+                            'file_name': output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                        }
+                        cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
 
-                # add psoi aug to list
-                bboxes_aug_list.append(bbsoi_aug)
+            for k, v in all_transformed.items():
+                aug_via_json_key = v['file_name'] + self.__via[v['key']]['size']
+                aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[v['key']])
+                aug_via_json[aug_via_json_key]['filename'] = v['file_name']
 
-            for imgs_idx in range(len(self.__dataset)):
-                key = self.__dataset[imgs_idx]["key"]
-
-                if numeric_file_name:
-                    via_filename = self.__via[key]['filename']
-                    via_size = self.__via[key]['size']
-                    aug_via_json_key = add_name + str(imgs_idx) + "." + via_filename.split(".")[1] + str(via_size)
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                    aug_via_json[aug_via_json_key]['filename'] = add_name + str(imgs_idx) + "." + aug_via_json[aug_via_json_key]['filename'].split(".")[1]
-                else:
-                    aug_via_json_key = add_name + key
-                    aug_via_json[aug_via_json_key] = copy.deepcopy(self.__via[key])
-                    aug_via_json[aug_via_json_key]['filename'] = add_name + aug_via_json[aug_via_json_key]['filename']
-                
                 annos = aug_via_json[aug_via_json_key]["regions"]
                 if len(annos) > 0:
                     for anno_idx, anno in enumerate(annos):
                         anno = anno["shape_attributes"]
-                        anno["x"] = int(bboxes_aug_list[imgs_idx][anno_idx].x1)
-                        anno["y"] = int(bboxes_aug_list[imgs_idx][anno_idx].y1)
-                        anno["width"] = int(bboxes_aug_list[imgs_idx][anno_idx].x2 - bboxes_aug_list[imgs_idx][anno_idx].x1)
-                        anno["height"] = int(bboxes_aug_list[imgs_idx][anno_idx].y2 - bboxes_aug_list[imgs_idx][anno_idx].y1)
+                        anno["x"] = int(v['bbsoi'][anno_idx].x1)
+                        anno["y"] = int(v['bbsoi'][anno_idx].y1)
+                        anno["width"] = int(v['bbsoi'][anno_idx].x2 - v['bbsoi'][anno_idx].x1)
+                        anno["height"] = int(v['bbsoi'][anno_idx].y2 - v['bbsoi'][anno_idx].y1)
 
             with open(output_dir + "via_region_data.json", "w") as output_file:
                 json.dump(aug_via_json, output_file)
