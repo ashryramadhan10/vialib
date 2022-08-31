@@ -441,6 +441,63 @@ class DatasetBoundingBox:
     def transform(self, tf, aug_engine='imgaug', add_name="", numeric_file_name=False):
         self.__Augmenter.transform(tf, aug_engine, self.__output_dir, add_name, numeric_file_name)
 
+    def split_train_test(self, class_list, regex_list, train_ratio=0.8):
+        
+        for regex_idx, regex in enumerate(regex_list):
+            file_list = sorted([f for f in os.listdir(self.__input_dir) if re.search(regex, f)], key=DatasetPolygon.numericalSort)
+
+            # create folder for current regex / class
+            class_output_dir = self.__output_dir + class_list[regex_idx] + "/"
+
+            # calculate the ratio of test dataset
+            test_counter = math.ceil(len(file_list) * (1 - train_ratio))
+
+            # path to original image
+            path_to_original_image = self.__input_dir
+
+            path_to_save_test_image = class_output_dir + "val/"
+            if not os.path.exists(path_to_save_test_image):
+                os.makedirs(path_to_save_test_image)
+
+            path_to_save_train_image = class_output_dir + "train/"
+            if not os.path.exists(path_to_save_train_image):
+                os.makedirs(path_to_save_train_image)
+
+            # shuffle the file list
+            random.shuffle(file_list)
+            train_dataset = file_list[test_counter:]
+            test_dataset = file_list[:test_counter]
+
+            # untuk mendapatkan filename + key harus menggunakan dataset_dict
+            test_via_json = {}
+            for file_name in test_dataset:
+                file_key = self.__dataset_dict[file_name]['key']
+                test_via_json[file_key] = copy.deepcopy(self.__via[file_key])
+
+                image_dst = os.path.join(path_to_save_test_image, file_name)
+                image_src = os.path.join(path_to_original_image, file_name)
+
+                # copy original image to destination path
+                shutil.copy(image_src, image_dst)
+
+            # generate via json for test dataset
+            with open(path_to_save_test_image + "via_region_data.json", "w") as output_file:
+                json.dump(test_via_json, output_file)
+
+            train_via_json = {}
+            for file_name in train_dataset:
+                file_key = self.__dataset_dict[file_name]['key']
+                train_via_json[file_key] = copy.deepcopy(self.__via[file_key])
+
+                image_dst = os.path.join(path_to_save_train_image, file_name)
+                image_src = os.path.join(path_to_original_image, file_name)
+
+                shutil.copy(image_src, image_dst)
+
+            # generate via json for train dataset
+            with open(path_to_save_train_image + "via_region_data.json", "w") as output_file:
+                json.dump(train_via_json, output_file)
+
     def merge(self, dataset_list) -> None:
         out_anns = {}
         out_anns.update(self.__via)
