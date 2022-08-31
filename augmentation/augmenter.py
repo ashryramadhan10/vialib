@@ -46,13 +46,13 @@ class AugmenterPolygon:
                     ia.seed(seed_num)
                     image_aug, psoi_aug = aug(image=img, polygons=psoi)
 
-                    cv2.imwrite(output_dir + "aug_" + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
-
-                    all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
-                        'key': dataset['key'],
-                        'psoi': psoi_aug,
-                        'file_name': "aug_" + str(repeat_idx).zfill(2) + "_" + file_name,
-                    }
+                    if len(psoi_aug) > 0:
+                        all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                            'key': dataset['key'],
+                            'psoi': psoi_aug,
+                            'file_name': "aug_" + str(repeat_idx).zfill(2) + "_" + file_name,
+                        }
+                        cv2.imwrite(output_dir + "aug_" + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
 
                 # copy original file
                 source = file_path
@@ -207,20 +207,21 @@ class AugmenterPolygon:
                     ia.seed(seed_num)
                     image_aug, psoi_aug = aug(image=img, polygons=psoi)
 
-                    if numeric_file_name:
-                        all_transformed[add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
-                            'key': dataset['key'],
-                            'psoi': psoi_aug,
-                            'file_name': add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
-                        }
-                        cv2.imwrite(output_dir + add_name + str(dataset_idx) + "." + file_name.split(".")[1], image_aug)
-                    else:
-                        all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
-                            'key': dataset['key'],
-                            'psoi': psoi_aug,
-                            'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
-                        }
-                        cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
+                    if len(psoi_aug) > 0:
+                        if numeric_file_name:
+                            all_transformed[add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                                'key': dataset['key'],
+                                'psoi': psoi_aug,
+                                'file_name': add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                            }
+                            cv2.imwrite(output_dir + add_name + str(dataset_idx) + "." + file_name.split(".")[1], image_aug)
+                        else:
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                                'key': dataset['key'],
+                                'psoi': psoi_aug,
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                            }
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
             
             # more robust to missing images because based on self.__dataset not self.__via
             for k, v in all_transformed.items():
@@ -352,11 +353,12 @@ class AugmenterBoundingBox:
                     ia.seed(seed_num)
                     image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
 
-                    all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
-                        'key': dataset['key'],
-                        'bbsoi': bbsoi_aug,
-                        'file_name': "aug_" + str(repeat_idx).zfill(2) + "_" + file_name,
-                    }
+                    if len(bbsoi_aug) > 0:
+                        all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                            'key': dataset['key'],
+                            'bbsoi': bbsoi_aug,
+                            'file_name': "aug_" + str(repeat_idx).zfill(2) + "_" + file_name,
+                        }
 
                     cv2.imwrite(output_dir + "aug_" + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
 
@@ -506,20 +508,21 @@ class AugmenterBoundingBox:
                     ia.seed(seed_num)
                     image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
 
-                    if numeric_file_name:
-                        all_transformed[output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
-                            'key': dataset['key'],
-                            'bbsoi': bbsoi_aug,
-                            'file_name': output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
-                        }
-                        cv2.imwrite(output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], image_aug)
-                    else:
-                        all_transformed[output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
-                            'key': dataset['key'],
-                            'bbsoi': bbsoi_aug,
-                            'file_name': output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name,
-                        }
-                        cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
+                    if len(bbsoi_aug) > 0:
+                        if numeric_file_name:
+                            all_transformed[output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                                'key': dataset['key'],
+                                'bbsoi': bbsoi_aug,
+                                'file_name': output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                            }
+                            cv2.imwrite(output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], image_aug)
+                        else:
+                            all_transformed[output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                                'key': dataset['key'],
+                                'bbsoi': bbsoi_aug,
+                                'file_name': output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                            }
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
 
             for k, v in all_transformed.items():
                 aug_via_json_key = v['file_name'] + str(self.__via[v['key']]['size'])
