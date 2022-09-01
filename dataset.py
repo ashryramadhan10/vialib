@@ -22,9 +22,9 @@ class DatasetPolygon:
     """
     
     # Basic members
-    __dataset = None
+    __dataset = []
     __dataset_dict = {}
-    __via = None
+    __via = {}
     length = 0
     __input_dir = None
     __output_dir = None
@@ -139,7 +139,7 @@ class DatasetPolygon:
         """
         print(self.class_list)
 
-    def plot_dataset(self, opacity=0.5, cols=2, image_start=0, num_of_sample=4, color_dict=None, without_bboxes=True, randomness=True):
+    def plot_dataset(self, opacity=0.5, cols=2, image_start=0, num_of_samples=4, color_dict=None, without_bboxes=True, randomness=True):
         """Plot the dataset
         Args:
             opacity: opacity of alpha face
@@ -150,7 +150,7 @@ class DatasetPolygon:
             without_bboxes: plot without bounding boxes
             randomness: set True if you want to display your images randomly
         """
-        self.__DatasetVisualizer.plot_dataset(polygons_data=self.__Polygon_data, opacity=opacity, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, without_bboxes=without_bboxes, randomness=randomness)
+        self.__DatasetVisualizer.plot_dataset(polygons_data=self.__Polygon_data, opacity=opacity, cols=cols, image_start=image_start, num_of_samples=num_of_samples, color_dict=color_dict, without_bboxes=without_bboxes, randomness=randomness)
 
     def visualize_keypoints_of_image(self, image, polygons, color=(0, 255, 0), diameter=15):
         """Visualize the keypoints
@@ -177,8 +177,8 @@ class DatasetPolygon:
         """
         self.__Converter.via2yolov5(class_id, output_dir=self.__output_dir)
 
-    def convert_to_unet_format(self):
-        """Covert VIA json annotation format to U-Net format
+    def convert_to_binary_semantic_segmentation_format(self):
+        """Covert VIA json annotation format to binary semantic segmentation (black and white) format
         Args:
             None
         """
@@ -191,7 +191,7 @@ class DatasetPolygon:
         """
         self.__Converter.via2iccv09(class_dict, self.__output_dir)
 
-    def convert_to_pascalvoc_format(self): # not yet tested
+    def convert_to_pascalvoc_format(self):
         """Covert VIA json annotation format to Pascal VOC format
         Args:
             None
@@ -410,7 +410,7 @@ class DatasetBoundingBox:
         """
         print(self.class_list)
 
-    def plot_dataset(self, thickness=5, cols=2, image_start=0, num_of_sample=4, color_dict=None, randomness=True):
+    def plot_dataset(self, thickness=5, cols=2, image_start=0, num_of_samples=4, color_dict=None, randomness=True):
         """Plot the dataset
         Args:
             cols: nb. fo columns in plot
@@ -419,7 +419,7 @@ class DatasetBoundingBox:
             semantic_segmentation: (for semantic segmentation only) set this to true if you in case semantic segmentation
             randomness: set True if you want to display your images randomly
         """
-        self.__DatasetVisualizer.plot_dataset(bboxes_data=self.__vialibbox_data, thickness=thickness, cols=cols, image_start=image_start, num_of_sample=num_of_sample, color_dict=color_dict, randomness=randomness)
+        self.__DatasetVisualizer.plot_dataset(bboxes_data=self.__vialibbox_data, thickness=thickness, cols=cols, image_start=image_start, num_of_samples=num_of_samples, color_dict=color_dict, randomness=randomness)
 
     ###########################  CONVERTER ############################################
     def convert_to_yolo_format(self):
