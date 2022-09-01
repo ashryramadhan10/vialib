@@ -1,6 +1,6 @@
 # Vialib
 
-Vialib is an open source library written in Python for helping you to do image augmentation, visualize your dataset annotations (in polygon or bounding box), convert to various most used format in computer vision model such as YOLOv4, YOLOv5, Pascal VOC, ICCV09, COCO 2017, and Semantic Segmentation Mask from Vgg Image Annotator (VIA) version 2.0.11 JSON files format.
+Vialib is an open source library written in Python for helping you to do image augmentation, visualize your dataset annotations (in polygon or bounding box), convert to various most used formats in computer vision model such as YOLOv4, YOLOv5, Pascal VOC, ICCV09, COCO 2017, and Semantic Segmentation Mask from Vgg Image Annotator (VIA) version 2.0.11 JSON files format.
 
 **Supported annotation styles**:
 * Bounding Box
@@ -149,12 +149,11 @@ dataset.convert_to_binary_semantic_segmentation_format()
 
 # convert to ICCV09 format (Multiclass Semantic Segmentation Mask)
 class_color_dict = {
-    'class_1': [255, 0, 0],
-    'class_2': [0, 255, 0],
-    'class_3': [0, 0, 255],
+    'class_1': {'color': [255, 0, 0], 'index': 0},
+    'class_2': {'color': [0, 255, 0], 'index': 1},
+    'class_3': {'color': [0, 0, 255], 'index': 2},
     ...
-    'class_n': [(0-255), (0-255), (0-255)],
-
+    'class_n': {'color': [(0-255), (0-255), (0-255)], 'index': (uint)},
 }
 dataset.convert_to_iccv09_format(class_color_dict)
 ```
