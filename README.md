@@ -1,6 +1,6 @@
 # Vialib
 
-Vialib is an open source library written in Python for helping you to do image augmentation, visualize your dataset annotations (in polygon or bounding box), convert to various most used format in computer vision model such as YOLOv4, YOLOv5, Pascal VOC, ICCV09, COCO 2017, and Semantic Segmentation Mask from Vgg Image Annotator (VIA) version 2.0.11 JSON files format.
+Vialib is an open source library written in Python for helping you to do image augmentation, visualize your dataset annotations (in polygon or bounding box), convert to various most used formats in computer vision model such as YOLOv4, YOLOv5, Pascal VOC, ICCV09, COCO 2017, and Semantic Segmentation Mask from Vgg Image Annotator (VIA) version 2.0.11 JSON files format.
 
 **Supported annotation styles**:
 * Bounding Box
