@@ -2,7 +2,7 @@ git init
 git add .
 git commit -am "initial commit"
 git remote add origin <ORIGIN_URL> e.g: https://github.com/ashryramadhan10/vialib
-git remove -v
+git remote -v
 git branch
 git branch --move main
 git push --set-upstream origin main

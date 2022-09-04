@@ -21,16 +21,16 @@ class VisualizerPolygons:
         opacity=0.5,
         cols=2,
         image_start=0,
-        num_of_sample=4,
+        num_of_samples=4,
         color_dict=None,
         without_bboxes=True,
         randomness=True):
         
         if randomness:
-            samples = random.sample(self.__dataset, num_of_sample)
+            samples = random.sample(self.__dataset, num_of_samples)
         else:
-            if (image_start + num_of_sample) > len(self.__dataset):
-                print('[!] Warning: num_of_sample argument exceeds the dataset array boundary from image_start argument')
+            if (image_start + num_of_samples) > len(self.__dataset):
+                print('[!] Warning: num_of_samples argument exceeds the dataset array boundary from image_start argument')
                 samples = self.__dataset[image_start:]
             elif image_start > len(self.__dataset):
                 print('[!] Warning: image_start argument is greater than the length of the dataset')
@@ -98,21 +98,21 @@ class VisualizerBoundingBoxes:
         thickness,
         cols,
         image_start,
-        num_of_sample,
+        num_of_samples,
         color_dict,
         randomness):
 
         if randomness:
-            samples = random.sample(self.__dataset, num_of_sample)
+            samples = random.sample(self.__dataset, num_of_samples)
         else:
-            if (image_start + num_of_sample) > len(self.__dataset):
-                print('[!] Warning: num_of_sample argument exceeds the dataset array boundary from image_start argument')
+            if (image_start + num_of_samples) > len(self.__dataset):
+                print('[!] Warning: num_of_samples argument exceeds the dataset array boundary from image_start argument')
                 samples = self.__dataset[image_start:]
             elif image_start > len(self.__dataset):
                 print('[!] Warning: image_start argument is greater than the length of the dataset')
                 samples = self.__dataset[-1]
             else:
-                samples = self.__dataset[image_start:(image_start + num_of_sample)]
+                samples = self.__dataset[image_start:(image_start + num_of_samples)]
 
         images_bboxes = []
         for sample in samples:
