@@ -12,7 +12,7 @@ import copy
 
 from . annotation.shapes import Vialiboundingbox, Vialibpolygon
 from . visualisation.visualizer import VisualizerPolygons, VisualizerBoundingBoxes
-from . converter.format import ConverterBoundinBox, ConverterPolygons
+from . converter.format import ConverterBoundingBox, ConverterPolygons
 from . augmentation.augmenter import AugmenterBoundingBox, AugmenterPolygon
 
 class DatasetPolygon:
@@ -298,6 +298,7 @@ class DatasetBoundingBox:
     __dataset_dict = {}
     __via = None
     length = 0
+    __input_dir = None
     __output_dir = None
 
     # Object class
@@ -376,6 +377,7 @@ class DatasetBoundingBox:
             self.__dataset = dataset_list
             self.__via = imgs_ann
             self.length = len(self.__dataset)
+            self.__input_dir = images_directory
             self.__output_dir = output_directory
 
             # generate output directory
@@ -390,7 +392,7 @@ class DatasetBoundingBox:
             self.__DatasetVisualizer = VisualizerBoundingBoxes(self.__dataset)
 
             # Converter
-            self.__Converter = ConverterBoundinBox(self.__dataset, self.class_list)
+            self.__Converter = ConverterBoundingBox(self.__dataset, self.class_list)
 
             # Augmenter
             self.__Augmenter = AugmenterBoundingBox(self.__dataset, self.__via, self.__vialibbox_data)
@@ -428,6 +430,13 @@ class DatasetBoundingBox:
             None
         """
         self.__Converter.via2yolo(output_dir=self.__output_dir)
+
+    def convert_to_yolov5_format(self, class_id):
+        """Covert VIA json annotation format to YOLOv5 format
+        Args:
+            None
+        """
+        self.__Converter.via2yolov5(class_id, output_dir=self.__output_dir)
 
     def convert_to_pascalvoc_format(self): # not yet tested
         """Covert VIA json annotation format to Pascal VOC format

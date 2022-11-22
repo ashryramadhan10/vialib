@@ -44,7 +44,7 @@ class ConverterPolygons:
         pascalvocformat = Pascalvocformat()
         pascalvocformat.via2pascalvoc(self.__dataset, output_dir)
 
-class ConverterBoundinBox:
+class ConverterBoundingBox:
 
     __dataset = None
     __class_list = None
@@ -56,6 +56,10 @@ class ConverterBoundinBox:
     def via2yolo(self, output_dir):
         yoloformat = Yoloformat()
         yoloformat.via2yolo(self.__dataset, self.__class_list, output_dir)
+
+    def via2yolov5(self, class_dict, output_dir):
+        yolov5 = Yolov5()
+        yolov5.via2yolov5(self.__dataset, class_dict, output_dir)
 
     def via2pascalvoc(self, output_dir):
         pascalvocformat = Pascalvocformat()

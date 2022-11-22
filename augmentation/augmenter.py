@@ -32,7 +32,7 @@ class AugmenterPolygon:
             all_transformed = {}
             aug_via_json = {}
 
-            for dataset in self.__dataset:
+            for dataset_idx, dataset in enumerate(self.__dataset):
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
 
@@ -44,7 +44,10 @@ class AugmenterPolygon:
                 for repeat_idx in range(0, repeat):
                     seed_num = random.randint(0, 100)
                     ia.seed(seed_num)
-                    image_aug, psoi_aug = aug(image=img, polygons=psoi)
+                    if len(aug) == len(self.__dataset):
+                        image_aug, psoi_aug = aug[dataset_idx](image=img, polygons=psoi)
+                    else:
+                        image_aug, psoi_aug = aug(image=img, polygons=psoi)
 
                     if len(psoi_aug) > 0:
                         all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
@@ -97,7 +100,7 @@ class AugmenterPolygon:
             aug_via_json = {}
             all_transformed = {}
 
-            for dataset in self.__dataset:
+            for dataset_idx, dataset in enumerate(self.__dataset):
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
 
@@ -118,7 +121,10 @@ class AugmenterPolygon:
 
                         # augment the image
                         random.seed(seed_num)
-                        transformed = aug(image=image, keypoints=keypoints)
+                        if len(aug) == len(self.__dataset):
+                            transformed = aug[dataset_idx](image=image, keypoints=keypoints)
+                        else:
+                            transformed = aug(image=image, keypoints=keypoints)
                         transformed_image = transformed['image']
                         transformed_keypoints = transformed['keypoints']
 
@@ -205,16 +211,20 @@ class AugmenterPolygon:
                 for repeat_idx in range(0, repeat):
                     seed_num = random.randint(0, 100)
                     ia.seed(seed_num)
-                    image_aug, psoi_aug = aug(image=img, polygons=psoi)
+
+                    if len(aug) == len(self.__dataset):
+                        image_aug, psoi_aug = aug[dataset_idx](image=img, polygons=psoi)
+                    else:
+                        image_aug, psoi_aug = aug(image=img, polygons=psoi)
 
                     if len(psoi_aug) > 0:
                         if numeric_file_name:
-                            all_transformed[add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1]] = {
                                 'key': dataset['key'],
                                 'psoi': psoi_aug,
-                                'file_name': add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1],
                             }
-                            cv2.imwrite(output_dir + add_name + str(dataset_idx) + "." + file_name.split(".")[1], image_aug)
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1], image_aug)
                         else:
                             all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
                                 'key': dataset['key'],
@@ -265,7 +275,10 @@ class AugmenterPolygon:
 
                         # augment the image
                         random.seed(seed_num)
-                        transformed = aug(image=image, keypoints=keypoints)
+                        if len(aug) == len(self.__dataset):
+                            transformed = aug[dataset_idx](image=image, keypoints=keypoints)
+                        else:
+                            transformed = aug(image=image, keypoints=keypoints)
                         transformed_image = transformed['image']
                         transformed_keypoints = transformed['keypoints']
 
@@ -276,14 +289,14 @@ class AugmenterPolygon:
                     # append to global all_transformed_keypoints list
                     if len(transformed_keypoints_list) > 0:
                         if numeric_file_name:
-                            all_transformed[add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1]] = {
                                 'key': dataset['key'],
                                 'keypoints': transformed_keypoints_list,
-                                'file_name': add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1],
                                 'classes': self.__polys[file_name]['classes'],
                             }
 
-                            cv2.imwrite(output_dir + add_name + str(dataset_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], transformed_image)
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1], transformed_image)
                         else:
                             all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
                                 'key': dataset['key'],
@@ -291,6 +304,7 @@ class AugmenterPolygon:
                                 'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
                                 'classes': self.__polys[file_name]['classes'],
                             }
+                            
 
                             cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, transformed_image)
 
@@ -339,7 +353,7 @@ class AugmenterBoundingBox:
             all_transformed = {}
             aug_via_json = {}
 
-            for dataset in self.__dataset:
+            for dataset_idx, dataset in enumerate(self.__dataset):
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
 
@@ -351,7 +365,10 @@ class AugmenterBoundingBox:
                 for repeat_idx in range(0, repeat):
                     seed_num = random.randint(0, 100)
                     ia.seed(seed_num)
-                    image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
+                    if len(aug) == len(self.__dataset):
+                        image_aug, bbsoi_aug = aug[dataset_idx](image=img, bounding_boxes=bbsoi)
+                    else:
+                        image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
 
                     if len(bbsoi_aug) > 0:
                         all_transformed["aug_" + str(repeat_idx).zfill(2) + "_" + file_name] = {
@@ -405,7 +422,7 @@ class AugmenterBoundingBox:
             all_transformed = {}
             aug_via_json = {}
 
-            for dataset in self.__dataset:
+            for dataset_idx, dataset in enumerate(self.__dataset):
                 
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
@@ -422,7 +439,10 @@ class AugmenterBoundingBox:
                         bboxes.append(bbox)
 
                     random.seed(seed_num)
-                    transformed = aug(image=image, bboxes=bboxes)
+                    if len(aug) == len(self.__dataset):
+                        transformed = aug[dataset_idx](image=image, bboxes=bboxes)
+                    else:
+                        transformed = aug(image=image, bboxes=bboxes)
                     transformed_image = transformed['image']
                     transformed_bboxes = transformed['bboxes']
 
@@ -493,8 +513,8 @@ class AugmenterBoundingBox:
             all_transformed = {}
             aug_via_json = {}
 
-            for dataset_json_idx in range(len(self.__dataset)):
-                file_path = self.__dataset[dataset_json_idx]['file_name']
+            for dataset_idx in range(len(self.__dataset)):
+                file_path = self.__dataset[dataset_idx]['file_name']
                 file_name = os.path.basename(file_path)
                 file_dir = file_path.split("/")[0]
 
@@ -506,21 +526,24 @@ class AugmenterBoundingBox:
                 for repeat_idx in range(0, repeat):
                     seed_num = random.randint(0, 100)
                     ia.seed(seed_num)
-                    image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
+                    if len(aug) == len(self.__dataset):
+                        image_aug, bbsoi_aug = aug[dataset_idx](image=img, bounding_boxes=bbsoi)
+                    else:
+                        image_aug, bbsoi_aug = aug(image=img, bounding_boxes=bbsoi)
 
                     if len(bbsoi_aug) > 0:
                         if numeric_file_name:
-                            all_transformed[output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
-                                'key': dataset['key'],
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                                'key': self.__dataset[dataset_idx]['key'],
                                 'bbsoi': bbsoi_aug,
-                                'file_name': output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1],
                             }
-                            cv2.imwrite(output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], image_aug)
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1], image_aug)
                         else:
-                            all_transformed[output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
-                                'key': dataset['key'],
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                                'key': self.__dataset[dataset_idx]['key'],
                                 'bbsoi': bbsoi_aug,
-                                'file_name': output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
                             }
                             cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
 
@@ -545,7 +568,7 @@ class AugmenterBoundingBox:
             all_transformed = {}
             aug_via_json = {}
 
-            for dataset in self.__dataset:
+            for dataset_idx, dataset in enumerate(self.__dataset):
                 seed_num = random.randint(0, 100)
                 file_path = dataset['file_name']
                 file_name = os.path.basename(file_path)
@@ -562,19 +585,22 @@ class AugmenterBoundingBox:
                         bboxes.append(bbox)
 
                     random.seed(seed_num)
-                    transformed = aug(image=image, bboxes=bboxes)
+                    if len(aug) == len(self.__dataset):
+                        transformed = aug[dataset_idx](image=image, bboxes=bboxes)
+                    else:
+                        transformed = aug(image=image, bboxes=bboxes)
                     transformed_image = transformed['image']
                     transformed_bboxes = transformed['bboxes']
 
                     if len(transformed_bboxes) > 0:
 
                         if numeric_file_name:
-                            all_transformed[add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1]] = {
                                 'key': dataset['key'],
                                 'bboxes': transformed_bboxes,
-                                'file_name': add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1],
+                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1],
                             }
-                            cv2.imwrite(output_dir + add_name + str(dataset_json_idx).zfill(2) + "_" + str(repeat_idx).zfill(2) + "." + file_name.split(".")[1], transformed_image)
+                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1], transformed_image)
                         else:
                             all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
                                 'key': dataset['key'],

@@ -106,7 +106,7 @@ def calculate_anchors(filelist='train.txt', output_dir='generated_anchors', num_
     
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
-    f = open(filelist)
+    f = open(filelist, encoding="cp437")
   
     lines = [line.rstrip('\n') for line in f.readlines()]
     
