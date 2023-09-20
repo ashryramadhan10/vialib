@@ -219,19 +219,30 @@ class AugmenterPolygon:
 
                     if len(psoi_aug) > 0:
                         if numeric_file_name:
-                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1]] = {
+                            
+                            if repeat == 1:
+                                tf_file_name = add_name + file_name
+                            else:
+                                tf_file_name = add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1]
+
+                            all_transformed[tf_file_name] = {
                                 'key': dataset['key'],
                                 'psoi': psoi_aug,
-                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1],
+                                'file_name': tf_file_name,
                             }
-                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + str(dataset_idx).zfill(2) + "." + file_name.split(".")[1], image_aug)
+                            cv2.imwrite(output_dir + tf_file_name, image_aug)
                         else:
-                            all_transformed[add_name + str(repeat_idx).zfill(2) + "_" + file_name] = {
+                            if repeat == 1:
+                                tf_file_name = add_name + file_name
+                            else:
+                                tf_file_name = add_name + str(repeat_idx).zfill(2) + "_" + file_name
+
+                            all_transformed[tf_file_name] = {
                                 'key': dataset['key'],
                                 'psoi': psoi_aug,
-                                'file_name': add_name + str(repeat_idx).zfill(2) + "_" + file_name,
+                                'file_name': tf_file_name,
                             }
-                            cv2.imwrite(output_dir + add_name + str(repeat_idx).zfill(2) + "_" + file_name, image_aug)
+                            cv2.imwrite(output_dir + tf_file_name, image_aug)
             
             # more robust to missing images because based on self.__dataset not self.__via
             for k, v in all_transformed.items():
